@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="a322ee75-a485-454c-b640-828337d65a7f" name="192.168.15.192">
+        <fileTransfer rootFolder="/root/configure/custom_components/mhtzn" accessType="SFTP" host="192.168.15.192" port="22" sshConfigId="927daa6a-fe9f-4cd5-81f1-b88d7e420146" sshConfig="root@192.168.15.192:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
