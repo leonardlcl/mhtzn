@@ -54,7 +54,7 @@ from homeassistant.helpers.reload import (
 )
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from . import debug_info, subscription
+from . import subscription
 from .client import async_publish
 from .const import (
     ATTR_DISCOVERY_HASH,
@@ -75,7 +75,6 @@ from .const import (
     MQTT_DISCONNECTED,
     PLATFORMS,
 )
-from .debug_info import log_message, log_messages
 from .discovery import (
     MQTT_DISCOVERY_DONE,
     MQTT_DISCOVERY_NEW,
@@ -412,7 +411,6 @@ class MqttAttributes(Entity):
         ).async_render_with_possible_json_value
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def attributes_message_received(msg: ReceiveMessage) -> None:
             try:
                 payload = attr_tpl(msg.payload)
@@ -525,7 +523,6 @@ class MqttAvailability(Entity):
         """(Re)Subscribe to topics."""
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def availability_message_received(msg: ReceiveMessage) -> None:
             """Handle a new received MQTT availability message."""
             topic = msg.topic
@@ -803,7 +800,6 @@ class MqttDiscoveryUpdate(Entity):
                 payload,
             )
             old_payload = self._discovery_data[ATTR_DISCOVERY_PAYLOAD]
-            debug_info.update_entity_discovery_data(self.hass, payload, self.entity_id)
             if not payload:
                 # Empty payload: Remove component
                 _LOGGER.info("Removing component: %s", self.entity_id)
@@ -820,9 +816,6 @@ class MqttDiscoveryUpdate(Entity):
             send_discovery_done(self.hass, self._discovery_data)
 
         if discovery_hash:
-            debug_info.add_entity_discovery_data(
-                self.hass, self._discovery_data, self.entity_id
-            )
             # Set in case the entity has been removed and is re-added, for example when changing entity_id
             set_discovery_hash(self.hass, discovery_hash)
             self._remove_discovery_updated = async_dispatcher_connect(
@@ -999,7 +992,6 @@ class MqttEntity(
         await MqttAttributes.async_will_remove_from_hass(self)
         await MqttAvailability.async_will_remove_from_hass(self)
         await MqttDiscoveryUpdate.async_will_remove_from_hass(self)
-        debug_info.remove_entity_data(self.hass, self.entity_id)
 
     async def async_publish(
         self,
@@ -1010,7 +1002,6 @@ class MqttEntity(
         encoding: str = DEFAULT_ENCODING,
     ):
         """Publish message to an MQTT topic."""
-        log_message(self.hass, self.entity_id, topic, payload, qos, retain)
         await async_publish(
             self.hass,
             topic,

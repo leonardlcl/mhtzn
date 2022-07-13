@@ -172,10 +172,6 @@ async def _async_setup_discovery(
 
     This method is a coroutine.
     """
-    _LOGGER.warning("conf : %s", conf)
-
-    _LOGGER.warning("config_entry : %s", config_entry)
-
     await discovery.async_start(hass, conf[CONF_DISCOVERY_PREFIX], conf[CONF_ENV_ID], config_entry)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -53,7 +53,6 @@ from ..const import (
     CONF_STATE_VALUE_TEMPLATE,
     PAYLOAD_NONE,
 )
-from ..debug_info import log_messages
 from ..mixins import MQTT_ENTITY_COMMON_SCHEMA, MqttEntity
 from .schema import MQTT_LIGHT_SCHEMA_SCHEMA
 
@@ -430,7 +429,6 @@ class MqttLight(MqttEntity, LightEntity, RestoreEntity):
                 }
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def state_received(msg):
             """Handle new MQTT messages."""
             payload = self._value_templates[CONF_STATE_VALUE_TEMPLATE](msg.payload)
@@ -490,7 +488,6 @@ class MqttLight(MqttEntity, LightEntity, RestoreEntity):
             return color
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def rgb_received(msg):
             """Handle new MQTT messages for RGB."""
             rgb = _rgbx_received(
@@ -524,7 +521,6 @@ class MqttLight(MqttEntity, LightEntity, RestoreEntity):
         add_topic(CONF_RGBW_STATE_TOPIC, rgbw_received)
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def rgbww_received(msg):
             """Handle new MQTT messages for RGBWW."""
             rgbww = _rgbx_received(
@@ -557,7 +553,6 @@ class MqttLight(MqttEntity, LightEntity, RestoreEntity):
         add_topic(CONF_COLOR_MODE_STATE_TOPIC, color_mode_received)
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def color_temp_received(msg):
             """Handle new MQTT messages for color temperature."""
             payload = self._value_templates[CONF_COLOR_TEMP_VALUE_TEMPLATE](
@@ -591,7 +586,6 @@ class MqttLight(MqttEntity, LightEntity, RestoreEntity):
         add_topic(CONF_EFFECT_STATE_TOPIC, effect_received)
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def hs_received(msg):
             """Handle new MQTT messages for hs color."""
             payload = self._value_templates[CONF_HS_VALUE_TEMPLATE](msg.payload, None)

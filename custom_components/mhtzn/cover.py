@@ -42,7 +42,6 @@ from .const import (
     CONF_RETAIN,
     CONF_STATE_TOPIC,
 )
-from .debug_info import log_messages
 from .mixins import (
     MQTT_ENTITY_COMMON_SCHEMA,
     MqttEntity,
@@ -338,7 +337,6 @@ class MqttCover(MqttEntity, CoverEntity):
         topics = {}
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def tilt_message_received(msg):
             """Handle tilt updates."""
             payload = self._tilt_status_template(msg.payload)
@@ -350,7 +348,6 @@ class MqttCover(MqttEntity, CoverEntity):
             self.tilt_payload_received(payload)
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def state_message_received(msg):
             """Handle new MQTT state messages."""
             payload = self._value_template(msg.payload)
@@ -388,7 +385,6 @@ class MqttCover(MqttEntity, CoverEntity):
             self.async_write_ha_state()
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def position_message_received(msg):
             """Handle new MQTT position messages."""
             payload = self._get_position_template(msg.payload)

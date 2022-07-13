@@ -21,8 +21,6 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 
-from .const import DOMAIN  # pylint:disable=unused-import
-from .hub import Hub
 from .client import MqttClientSetup
 from .const import (
     DATA_MQTT_CONFIG,
@@ -92,8 +90,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_USERNAME: username,
             CONF_PASSWORD: password,
         }
-
-        _LOGGER.warning("connection_dict : %s", connection_dict)
 
         connection_store_dict[name] = connection_dict
 

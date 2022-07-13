@@ -43,7 +43,6 @@ from ..const import (
     CONF_STATE_TOPIC,
     PAYLOAD_NONE,
 )
-from ..debug_info import log_messages
 from ..mixins import MQTT_ENTITY_COMMON_SCHEMA, MqttEntity
 from .schema import MQTT_LIGHT_SCHEMA_SCHEMA
 from .schema_basic import MQTT_LIGHT_ATTRIBUTES_BLOCKED

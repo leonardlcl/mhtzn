@@ -85,8 +85,6 @@ async def async_start(  # noqa: C901
         hass.data[LAST_DISCOVERY] = time.time()
         payload = msg.payload
 
-        _LOGGER.warning("payload : %s", payload)
-
         if payload:
             try:
                 payload = json.loads(payload)
@@ -374,8 +372,6 @@ async def async_start(  # noqa: C901
             )
             return
 
-        _LOGGER.warning("discovery_id : %s", discovery_id)
-
         await async_process_discovery_payload(component, discovery_id, payload)
 
     hass.data[DATA_CONFIG_FLOW_LOCK] = asyncio.Lock()
@@ -396,7 +392,6 @@ async def async_start(  # noqa: C901
 
     async def query_device_async_subscribe():
         await mhtzn.async_subscribe(hass, f"{discovery_topic}/center/p5", async_discovery_message_received, 0)
-        _LOGGER.warning("订阅获取设备列表指令")
 
     async def query_device_async_publish():
         await asyncio.sleep(5)
@@ -407,7 +402,6 @@ async def async_start(  # noqa: C901
             "data": {}
         }
         await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
-        _LOGGER.warning("发布获取设备列表指令")
 
     hass.data[DISCOVERY_UNSUBSCRIBE] = await asyncio.gather(
         query_device_async_subscribe(),

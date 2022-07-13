@@ -8,7 +8,6 @@ import attr
 
 from homeassistant.core import HomeAssistant
 
-from . import debug_info
 from .. import mhtzn
 from .const import DEFAULT_QOS
 from .models import MessageCallbackType
@@ -34,17 +33,10 @@ class EntitySubscription:
 
         if other is not None and other.unsubscribe_callback is not None:
             other.unsubscribe_callback()
-            # Clear debug data if it exists
-            debug_info.remove_subscription(
-                self.hass, other.message_callback, other.topic
-            )
 
         if self.topic is None:
             # We were asked to remove the subscription or not to create it
             return
-
-        # Prepare debug data
-        debug_info.add_subscription(self.hass, self.message_callback, self.topic)
 
         self.subscribe_task = mhtzn.async_subscribe(
             hass, self.topic, self.message_callback, self.qos, self.encoding
@@ -107,10 +99,6 @@ def async_prepare_subscribe_topics(
     for remaining in current_subscriptions.values():
         if remaining.unsubscribe_callback is not None:
             remaining.unsubscribe_callback()
-            # Clear debug data if it exists
-            debug_info.remove_subscription(
-                hass, remaining.message_callback, remaining.topic
-            )
 
     return new_state
 

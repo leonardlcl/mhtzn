@@ -34,7 +34,6 @@ from .const import (
     CONF_STATE_TOPIC,
     PAYLOAD_NONE,
 )
-from .debug_info import log_messages
 from .mixins import (
     MQTT_ENTITY_COMMON_SCHEMA,
     MqttEntity,
@@ -104,10 +103,6 @@ class MqttSwitch(MqttEntity, SwitchEntity, RestoreEntity):
         self._state_off = None
         self._optimistic = None
 
-        _LOGGER.warning("config : %s", config)
-        _LOGGER.warning("config_entry : %s", config_entry)
-        _LOGGER.warning("discovery_data : %s", discovery_data)
-
         MqttEntity.__init__(self, hass, config, config_entry, discovery_data)
 
     @staticmethod
@@ -135,7 +130,6 @@ class MqttSwitch(MqttEntity, SwitchEntity, RestoreEntity):
         """(Re)Subscribe to topics."""
 
         @callback
-        @log_messages(self.hass, self.entity_id)
         def state_message_received(msg):
             """Handle new MQTT state messages."""
             payload = self._value_template(msg.payload)

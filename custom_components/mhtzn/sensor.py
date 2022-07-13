@@ -1,4 +1,5 @@
 """Platform for sensor integration."""
+'''
 # This file shows the setup for the sensors associated with the cover.
 # They are setup in the same way with the call to the async_setup_entry function
 # via HA from the module __init__. Each sensor has a device_class, this tells HA how
@@ -143,3 +144,4 @@ class IlluminanceSensor(SensorBase):
     def state(self):
         """Return the state of the sensor."""
         return self._roller.illuminance
+'''

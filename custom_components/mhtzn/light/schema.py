@@ -5,8 +5,8 @@ CONF_SCHEMA = "schema"
 
 MQTT_LIGHT_SCHEMA_SCHEMA = vol.Schema(
     {
-        vol.Optional(CONF_SCHEMA, default="basic"): vol.All(
-            vol.Lower, vol.Any("basic", "json", "template")
+        vol.Optional(CONF_SCHEMA, default="json"): vol.All(
+            vol.Lower, vol.Any("json")
         )
     }
 )
