@@ -103,107 +103,12 @@ async def async_start(  # noqa: C901
             device_type = device["devType"]
             if device_type == 1:
                 await add_entity("light", device_name, device_sn)
-            elif device_type == 2:
-                await add_entity("switch", device_name, device_sn)
             elif device_type == 3:
                 await add_entity("cover", device_name, device_sn)
-
-    '''
-    async def async_discovery_message_received_back(msg):
-        """Process the received message."""
-        hass.data[LAST_DISCOVERY] = time.time()
-        payload = msg.payload
-        topic = msg.topic
-        topic_trimmed = topic.replace(f"{discovery_topic}/", "", 1)
-
-        if not (match := TOPIC_MATCHER.match(topic_trimmed)):
-            if topic_trimmed.endswith("config"):
-                _LOGGER.warning(
-                    "Received message on illegal discovery topic '%s'", topic
-                )
-            return
-
-        component, node_id, object_id = match.groups()
-
-        _LOGGER.warning("component : %s", component)
-
-        _LOGGER.warning("node_id : %s", node_id)
-
-        _LOGGER.warning("object_id : %s", object_id)
-
-        if component not in SUPPORTED_COMPONENTS:
-            _LOGGER.warning("Integration %s is not supported", component)
-            return
-
-        if payload:
-            try:
-                payload = json.loads(payload)
-            except ValueError:
-                _LOGGER.warning("Unable to parse JSON %s: '%s'", object_id, payload)
-                return
-
-        payload = MQTTConfig(payload)
-
-        for key in list(payload):
-            abbreviated_key = key
-            key = ABBREVIATIONS.get(key, key)
-            payload[key] = payload.pop(abbreviated_key)
-
-        if CONF_DEVICE in payload:
-            device = payload[CONF_DEVICE]
-            for key in list(device):
-                abbreviated_key = key
-                key = DEVICE_ABBREVIATIONS.get(key, key)
-                device[key] = device.pop(abbreviated_key)
-
-        if TOPIC_BASE in payload:
-            base = payload.pop(TOPIC_BASE)
-            for key, value in payload.items():
-                if isinstance(value, str) and value:
-                    if value[0] == TOPIC_BASE and key.endswith("topic"):
-                        payload[key] = f"{base}{value[1:]}"
-                    if value[-1] == TOPIC_BASE and key.endswith("topic"):
-                        payload[key] = f"{value[:-1]}{base}"
-            if payload.get(CONF_AVAILABILITY):
-                for availability_conf in cv.ensure_list(payload[CONF_AVAILABILITY]):
-                    if not isinstance(availability_conf, dict):
-                        continue
-                    if topic := availability_conf.get(CONF_TOPIC):
-                        if topic[0] == TOPIC_BASE:
-                            availability_conf[CONF_TOPIC] = f"{base}{topic[1:]}"
-                        if topic[-1] == TOPIC_BASE:
-                            availability_conf[CONF_TOPIC] = f"{topic[:-1]}{base}"
-
-        # If present, the node_id will be included in the discovered object id
-        discovery_id = " ".join((node_id, object_id)) if node_id else object_id
-        discovery_hash = (component, discovery_id)
-
-        if payload:
-            # Attach MQTT topic to the payload, used for debug prints
-            setattr(payload, "__configuration_source__", f"MQTT (topic: '{topic}')")
-            discovery_data = {
-                ATTR_DISCOVERY_HASH: discovery_hash,
-                ATTR_DISCOVERY_PAYLOAD: payload,
-                ATTR_DISCOVERY_TOPIC: topic,
-            }
-            setattr(payload, "discovery_data", discovery_data)
-
-            payload[CONF_PLATFORM] = "mqtt"
-
-        if discovery_hash in hass.data[PENDING_DISCOVERED]:
-            pending = hass.data[PENDING_DISCOVERED][discovery_hash]["pending"]
-            pending.appendleft(payload)
-            _LOGGER.info(
-                "Component has already been discovered: %s %s, queuing update",
-                component,
-                discovery_id,
-            )
-            return
-
-        _LOGGER.warning("discovery_id : %s", discovery_id)
-
-        await async_process_discovery_payload(component, discovery_id, payload)
-    '''
+            '''
+            elif device_type == 2:
+                await add_entity("switch", device_name, device_sn)
+            '''
 
     async def async_process_discovery_payload(component, discovery_id, payload):
         """Process the payload of a new discovery."""

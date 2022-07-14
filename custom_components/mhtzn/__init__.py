@@ -37,7 +37,6 @@ from .client import (  # noqa: F401
     publish,
     subscribe,
 )
-from . import hub
 from .const import (  # noqa: F401
     ATTR_PAYLOAD,
     ATTR_QOS,
