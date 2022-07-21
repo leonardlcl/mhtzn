@@ -34,26 +34,21 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-TOPIC_MATCHER = re.compile(
-    r"(?P<component>\w+)/(?:(?P<node_id>[a-zA-Z0-9_-]+)/)"
-    r"?(?P<object_id>[a-zA-Z0-9_-]+)/config"
-)
-
 SUPPORTED_COMPONENTS = [
     "light",
     "switch",
     "cover",
 ]
 
-ALREADY_DISCOVERED = "mqtt_discovered_components"
-PENDING_DISCOVERED = "mqtt_pending_components"
-DATA_CONFIG_FLOW_LOCK = "mqtt_discovery_config_flow_lock"
-DISCOVERY_UNSUBSCRIBE = "mqtt_discovery_unsubscribe"
-INTEGRATION_UNSUBSCRIBE = "mqtt_integration_discovery_unsubscribe"
-MQTT_DISCOVERY_UPDATED = "mqtt_discovery_updated_{}"
-MQTT_DISCOVERY_NEW = "mqtt_discovery_new_{}_{}"
-MQTT_DISCOVERY_DONE = "mqtt_discovery_done_{}"
-LAST_DISCOVERY = "mqtt_last_discovery"
+ALREADY_DISCOVERED = "mhtzn_discovered_components"
+PENDING_DISCOVERED = "mhtzn_pending_components"
+DATA_CONFIG_FLOW_LOCK = "mhtzn_discovery_config_flow_lock"
+DISCOVERY_UNSUBSCRIBE = "mhtzn_discovery_unsubscribe"
+INTEGRATION_UNSUBSCRIBE = "mhtzn_integration_discovery_unsubscribe"
+MQTT_DISCOVERY_UPDATED = "mhtzn_discovery_updated_{}"
+MQTT_DISCOVERY_NEW = "mhtzn_discovery_new_{}_{}"
+MQTT_DISCOVERY_DONE = "mhtzn_discovery_done_{}"
+LAST_DISCOVERY = "mhtzn_last_discovery"
 
 TOPIC_BASE = "~"
 
@@ -214,8 +209,6 @@ async def async_start(  # noqa: C901
             payload["supported_color_modes"] = ["color_temp", "rgb"]
         elif component == "cover":
             payload["command_topic"] = f"P/{env_id}/center/q21"
-            payload["set_position_topic"] = f"P/{env_id}/center/q21"
-            payload["position_topic"] = f"P/{env_id}/center/q21"
 
         payload = MQTTConfig(payload)
 
@@ -295,23 +288,18 @@ async def async_start(  # noqa: C901
     #     )
     # )
 
-    async def query_device_async_subscribe():
-        await mhtzn.async_subscribe(hass, f"{discovery_topic}/center/p5", async_discovery_message_received, 0)
-
-    async def query_device_async_publish():
-        await asyncio.sleep(5)
-        query_device_topic = f"P/{env_id}/center/q5"
-        query_device_payload = {
-            "seq": 1,
-            "rspTo": discovery_topic,
-            "data": {}
-        }
-        await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
+    discovery_topics = [
+        f"{discovery_topic}/center/p5",
+    ]
 
     hass.data[DISCOVERY_UNSUBSCRIBE] = await asyncio.gather(
-        query_device_async_subscribe(),
-        query_device_async_publish()
+        *(
+            mhtzn.async_subscribe(hass, topic, async_discovery_message_received, 0)
+            for topic in discovery_topics
+        )
     )
+
+    await query_device_async_publish()
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

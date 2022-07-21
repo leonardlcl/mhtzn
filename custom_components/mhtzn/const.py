@@ -37,7 +37,7 @@ DATA_MQTT = "mhtzn"
 DATA_MQTT_CONFIG = "mhtzn_config"
 DATA_MQTT_RELOAD_NEEDED = "mhtzn_reload_needed"
 
-DEFAULT_PREFIX = "homeassistant"
+DEFAULT_PREFIX = "mhtzn"
 DEFAULT_BIRTH_WILL_TOPIC = DEFAULT_PREFIX + "/status"
 DEFAULT_DISCOVERY = True
 DEFAULT_ENCODING = "utf-8"
@@ -73,6 +73,5 @@ PROTOCOL_311 = "3.1.1"
 
 PLATFORMS = [
     Platform.LIGHT,
-    Platform.SWITCH,
     Platform.COVER,
 ]

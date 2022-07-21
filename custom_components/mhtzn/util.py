@@ -1,9 +1,12 @@
 """Utility functions for the MQTT integration."""
+import asyncio
+import json
 from typing import Any
 
 import voluptuous as vol
 
 from homeassistant.const import CONF_PAYLOAD
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, template
 
 from .const import (
@@ -12,8 +15,19 @@ from .const import (
     ATTR_RETAIN,
     ATTR_TOPIC,
     DEFAULT_QOS,
-    DEFAULT_RETAIN,
+    DEFAULT_RETAIN, DATA_MQTT, DEFAULT_PREFIX,
 )
+
+
+async def query_device_async_publish(hass: HomeAssistant, env_id):
+    await asyncio.sleep(2)
+    query_device_topic = f"P/{env_id}/center/q5"
+    query_device_payload = {
+        "seq": 1,
+        "rspTo": DEFAULT_PREFIX,
+        "data": {}
+    }
+    await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
 
 
 def valid_topic(value: Any) -> str:
@@ -48,7 +62,7 @@ def valid_subscribe_topic(value: Any) -> str:
     value = valid_topic(value)
     for i in (i for i, c in enumerate(value) if c == "+"):
         if (i > 0 and value[i - 1] != "/") or (
-            i < len(value) - 1 and value[i + 1] != "/"
+                i < len(value) - 1 and value[i + 1] != "/"
         ):
             raise vol.Invalid(
                 "Single-level wildcard must occupy an entire level of the filter"

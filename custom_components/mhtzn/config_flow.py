@@ -6,6 +6,7 @@ import queue
 from collections import OrderedDict
 
 import voluptuous as vol
+from typing import Any
 
 from homeassistant import config_entries, exceptions
 from homeassistant.components import zeroconf
@@ -49,6 +50,7 @@ connection_store_dict = {}
 
 MQTT_TIMEOUT = 5
 
+
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Hello World."""
 
@@ -58,7 +60,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # automatically. This example uses PUSH, as the dummy hub will notify HA of
     # changes.
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
-
 
     async def async_step_zeroconf(
             self, discovery_info: zeroconf.ZeroconfServiceInfo
@@ -71,6 +72,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         username = None
         password = None
         env_id = None
+
+        _LOGGER.warning("async_step_zeroconf")
 
         for key, value in discovery_info.properties.items():
             if key == 'username':
@@ -115,6 +118,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Confirm the setup."""
         errors = {}
 
+        _LOGGER.warning("async_step_broker")
+
         if user_input is not None:
             name = user_input[CONF_NAME]
             connection_dict = connection_store_dict.get(name)
@@ -152,7 +157,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if can_connect:
                 selectable_list.append(key)
 
-        if len(selectable_list)<1:
+        if len(selectable_list) < 1:
             return self.async_abort(reason="not_found_device")
 
         fields = OrderedDict()
@@ -161,6 +166,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="broker", data_schema=vol.Schema(fields), errors=errors
         )
+
+    #async def async_step_onboarding(
+    #        self, data: dict[str, Any] | None = None
+    #) -> FlowResult:
+    #    """Handle a flow initialized by onboarding."""
+    #    return self.async_create_entry(title="Radio Browser", data={})
+
 
 def try_connection(hass, broker, port, username, password, protocol="3.1.1"):
     """Test if we can connect to an MQTT broker."""
@@ -197,6 +209,7 @@ def try_connection(hass, broker, port, username, password, protocol="3.1.1"):
     finally:
         client.disconnect()
         client.loop_stop()
+
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""

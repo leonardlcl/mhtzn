@@ -27,6 +27,7 @@ from homeassistant.const import (
     CONF_PAYLOAD,
     CONF_PORT,
     CONF_USERNAME,
+    Platform,
     EVENT_HOMEASSISTANT_STOP,
     SERVICE_RELOAD, CONF_VALUE_TEMPLATE,
 )
@@ -62,7 +63,9 @@ from .const import (  # noqa: F401
     DOMAIN,
     MQTT_CONNECTED,
     MQTT_DISCONNECTED,
-    PLATFORMS, CONF_ENV_ID, CONF_RETAIN,
+    PLATFORMS,
+    CONF_ENV_ID,
+    CONF_RETAIN,
 )
 
 from .models import (  # noqa: F401
@@ -77,9 +80,15 @@ _LOGGER = logging.getLogger(__name__)
 
 # List of platforms to support. There should be a matching .py file for each,
 # eg <cover.py> and <sensor.py>
-PLATFORMS: list[str] = ["switch"]
 
 MANDATORY_DEFAULT_VALUES = (CONF_PORT,)
+
+GATEWAY_PLATFORMS = [
+    Platform.ALARM_CONTROL_PANEL,
+    Platform.LIGHT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
 
 SERVICE_PUBLISH = "publish"
 SERVICE_DUMP = "dump"
@@ -138,11 +147,13 @@ def _merge_extended_config(entry, conf):
     conf = {**DEFAULT_VALUES, **conf}
     return {**conf, **entry.data}
 
+
 async def async_remove_config_entry_device(
         hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
 ) -> bool:
     """Remove a config entry from a device."""
     return True
+
 
 async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle signals of config entry being updated.
@@ -171,7 +182,9 @@ async def _async_setup_discovery(
 
     This method is a coroutine.
     """
+
     await discovery.async_start(hass, conf[CONF_DISCOVERY_PREFIX], conf[CONF_ENV_ID], config_entry)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Hello World from a config entry."""
@@ -283,4 +296,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     return True
+
+
+async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+
+    hass.data[DOMAIN].pu
+
+    return False
 
