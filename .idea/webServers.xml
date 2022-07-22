@@ -9,6 +9,13 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="48a66be1-d398-44f0-9c43-b78eb45720e9" name="192.168.0.120">
+        <fileTransfer rootFolder="/usr/share/hassio/homeassistant/custom_components/mhtzn" accessType="SFTP" host="192.168.0.120" port="22" sshConfigId="429bc1f2-a5de-426e-abc9-155cc558e5f4" sshConfig="root@192.168.0.120:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

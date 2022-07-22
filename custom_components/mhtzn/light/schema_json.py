@@ -59,7 +59,7 @@ from ..const import (
     CONF_ENCODING,
     CONF_QOS,
     CONF_RETAIN,
-    CONF_STATE_TOPIC,
+    CONF_STATE_TOPIC, LIGHT_MAX_KELVIN, LIGHT_MIN_KELVIN,
 )
 from ..mixins import MQTT_ENTITY_COMMON_SCHEMA, MqttEntity
 from .schema import MQTT_LIGHT_SCHEMA_SCHEMA
@@ -546,7 +546,9 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
                 should_update = True
 
         if ATTR_COLOR_TEMP in kwargs:
-            message["data"]["kelvin"] = int(kwargs[ATTR_COLOR_TEMP])
+            kelvin = int(kwargs[ATTR_COLOR_TEMP])
+            kelvin = LIGHT_MAX_KELVIN - kelvin + LIGHT_MIN_KELVIN
+            message["data"]["kelvin"] = kelvin
             if message["data"].get("on") is not None:
                 del message["data"]["on"]
 

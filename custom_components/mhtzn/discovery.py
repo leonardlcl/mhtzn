@@ -29,7 +29,7 @@ from .const import (
     CONF_TOPIC,
     CONFIG_ENTRY_IS_SETUP,
     DATA_CONFIG_ENTRY_LOCK,
-    DOMAIN,
+    DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN,
 )
 
 from .util import query_device_async_publish
@@ -205,8 +205,8 @@ async def async_start(  # noqa: C901
             payload["schema"] = "json"
             payload["brightness"] = True
             payload["color_mode"] = True
-            payload["min_mireds"] = 2700
-            payload["max_mireds"] = 6500
+            payload["min_mireds"] = LIGHT_MIN_KELVIN
+            payload["max_mireds"] = LIGHT_MAX_KELVIN
             payload["supported_color_modes"] = ["color_temp", "rgb"]
         elif component == "cover":
             payload["command_topic"] = f"P/0/center/q21"

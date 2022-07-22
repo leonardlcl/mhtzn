@@ -3,6 +3,13 @@
   <component name="PublishConfigData" serverName="192.168.15.192" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
+      <paths name="192.168.0.120">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$/custom_components/mhtzn" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="192.168.15.192">
         <serverdata>
           <mappings>
