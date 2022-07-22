@@ -32,6 +32,8 @@ from .const import (
     DOMAIN, CONF_ENV_ID, DATA_MQTT,
 )
 
+from .util import query_device_async_publish
+
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORTED_COMPONENTS = [
@@ -299,7 +301,7 @@ async def async_start(  # noqa: C901
         )
     )
 
-    await query_device_async_publish()
+    await query_device_async_publish(hass, config_entry)
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

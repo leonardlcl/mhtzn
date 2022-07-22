@@ -73,8 +73,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         password = None
         env_id = None
 
-        _LOGGER.warning("async_step_zeroconf")
-
         for key, value in discovery_info.properties.items():
             if key == 'username':
                 username = value
@@ -117,8 +115,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         global title
         """Confirm the setup."""
         errors = {}
-
-        _LOGGER.warning("async_step_broker")
 
         if user_input is not None:
             name = user_input[CONF_NAME]

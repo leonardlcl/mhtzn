@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
 
 from homeassistant.const import CONF_PAYLOAD
 from homeassistant.core import HomeAssistant
@@ -19,8 +20,9 @@ from .const import (
 )
 
 
-async def query_device_async_publish(hass: HomeAssistant, env_id):
+async def query_device_async_publish(hass: HomeAssistant, entry: ConfigEntry):
     await asyncio.sleep(2)
+    env_id = entry.data["env_id"]
     query_device_topic = f"P/{env_id}/center/q5"
     query_device_payload = {
         "seq": 1,

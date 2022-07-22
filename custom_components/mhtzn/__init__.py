@@ -17,7 +17,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 from . import discovery
-from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic
+from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic, query_device_async_publish
 
 from .config import CONFIG_SCHEMA_BASE, DEFAULT_VALUES, DEPRECATED_CONFIG_KEYS, SCHEMA_BASE
 from homeassistant.const import (
@@ -301,7 +301,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
 
-    hass.data[DOMAIN].pu
+    await query_device_async_publish(hass, config_entry)
 
     return False
 
