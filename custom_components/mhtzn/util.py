@@ -16,14 +16,13 @@ from .const import (
     ATTR_RETAIN,
     ATTR_TOPIC,
     DEFAULT_QOS,
-    DEFAULT_RETAIN, DATA_MQTT, DEFAULT_PREFIX,
+    DEFAULT_RETAIN, DATA_MQTT, DEFAULT_PREFIX, CONF_ENV_ID,
 )
 
 
 async def query_device_async_publish(hass: HomeAssistant, entry: ConfigEntry):
     await asyncio.sleep(2)
-    env_id = entry.data["env_id"]
-    query_device_topic = f"P/{env_id}/center/q5"
+    query_device_topic = f"P/{entry.data[CONF_ENV_ID]}/center/q5"
     query_device_payload = {
         "seq": 1,
         "rspTo": DEFAULT_PREFIX,
