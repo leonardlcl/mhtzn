@@ -64,7 +64,6 @@ from .const import (  # noqa: F401
     MQTT_CONNECTED,
     MQTT_DISCONNECTED,
     PLATFORMS,
-    CONF_ENV_ID,
     CONF_RETAIN,
 )
 
@@ -183,7 +182,7 @@ async def _async_setup_discovery(
     This method is a coroutine.
     """
 
-    await discovery.async_start(hass, conf[CONF_DISCOVERY_PREFIX], conf[CONF_ENV_ID], config_entry)
+    await discovery.async_start(hass, conf[CONF_DISCOVERY_PREFIX], config_entry)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -301,7 +300,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
 
-    await query_device_async_publish(hass, config_entry)
+    # await query_device_async_publish(hass, config_entry)
 
-    return False
+    return True
 

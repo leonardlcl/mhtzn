@@ -29,7 +29,7 @@ from .const import (
     CONF_TOPIC,
     CONFIG_ENTRY_IS_SETUP,
     DATA_CONFIG_ENTRY_LOCK,
-    DOMAIN, CONF_ENV_ID, DATA_MQTT,
+    DOMAIN,
 )
 
 from .util import query_device_async_publish
@@ -72,7 +72,7 @@ def set_discovery_hash(hass: HomeAssistant, discovery_hash: tuple):
 
 
 async def async_start(  # noqa: C901
-        hass: HomeAssistant, discovery_topic, env_id, config_entry=None
+        hass: HomeAssistant, discovery_topic, config_entry=None
 ) -> None:
     """Start MQTT Discovery."""
     mqtt_integrations = {}
@@ -193,16 +193,15 @@ async def async_start(  # noqa: C901
             "name": device_name,
             "object_id": unique_id,
             "unique_id": unique_id,
-            "env_id": env_id,
             "key_num": key_num
         }
 
         topic = f"{discovery_topic}/unique_id/config"
 
         if component == "switch":
-            payload["command_topic"] = f"P/{env_id}/center/q19"
+            payload["command_topic"] = f"P/0/center/q19"
         elif component == "light":
-            payload["command_topic"] = f"P/{env_id}/center/q20"
+            payload["command_topic"] = f"P/0/center/q20"
             payload["schema"] = "json"
             payload["brightness"] = True
             payload["color_mode"] = True
@@ -210,7 +209,7 @@ async def async_start(  # noqa: C901
             payload["max_mireds"] = 6500
             payload["supported_color_modes"] = ["color_temp", "rgb"]
         elif component == "cover":
-            payload["command_topic"] = f"P/{env_id}/center/q21"
+            payload["command_topic"] = f"P/0/center/q21"
 
         payload = MQTTConfig(payload)
 
@@ -301,7 +300,7 @@ async def async_start(  # noqa: C901
         )
     )
 
-    await query_device_async_publish(hass, config_entry)
+    await query_device_async_publish(hass)
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

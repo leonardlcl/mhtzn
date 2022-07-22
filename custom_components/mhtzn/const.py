@@ -11,7 +11,6 @@ ATTR_TOPIC = "topic"
 
 CONF_AVAILABILITY = "availability"
 CONF_BROKER = "broker"
-CONF_ENV_ID = "env_id"
 CONF_BIRTH_MESSAGE = "birth_message"
 CONF_COMMAND_TEMPLATE = "command_template"
 CONF_COMMAND_TOPIC = "command_topic"

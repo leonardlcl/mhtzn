@@ -45,7 +45,6 @@ from .const import (
     PLATFORMS,
     PROTOCOL_31,
     PROTOCOL_311,
-    CONF_ENV_ID,
 )
 from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic
 
@@ -84,7 +83,6 @@ PLATFORM_CONFIG_SCHEMA_BASE = vol.Schema(
 CONFIG_SCHEMA_BASE = PLATFORM_CONFIG_SCHEMA_BASE.extend(
     {
         vol.Optional(CONF_NAME): cv.string,
-        vol.Optional(CONF_ENV_ID): cv.string,
         vol.Optional(CONF_CLIENT_ID): cv.string,
         vol.Optional(CONF_KEEPALIVE, default=DEFAULT_KEEPALIVE): vol.All(
             vol.Coerce(int), vol.Range(min=15)

@@ -1,6 +1,6 @@
 {
   "domain": "mhtzn",
-  "name": "MHTZN",
+  "name": "棉花糖智能",
   "config_flow": true,
   "documentation": "https://github.com/leonardlcl/hass-mhtzn",
   "requirements": ["paho-mqtt==1.6.1"],

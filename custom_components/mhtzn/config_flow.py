@@ -26,7 +26,6 @@ from .client import MqttClientSetup
 from .const import (
     DATA_MQTT_CONFIG,
     CONF_BROKER,
-    CONF_ENV_ID,
     DEFAULT_DISCOVERY,
     DOMAIN,
 )
@@ -50,6 +49,8 @@ connection_store_dict = {}
 
 MQTT_TIMEOUT = 5
 
+CONF_OPT_TYPE = "opt_type"
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Hello World."""
@@ -71,7 +72,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         port = discovery_info.port
         username = None
         password = None
-        env_id = None
 
         for key, value in discovery_info.properties.items():
             if key == 'username':
@@ -80,11 +80,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 password = value
             elif key == 'host':
                 host = value
-            elif key == 'env_id':
-                env_id = value
 
         connection_dict = {
-            CONF_ENV_ID: env_id,
             CONF_NAME: name,
             CONF_BROKER: host,
             CONF_PORT: port,
@@ -109,10 +106,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        return await self.async_step_broker()
+        return await self.async_step_option()
 
-    async def async_step_broker(self, user_input=None):
-        global title
+    async def async_step_option(self, user_input=None):
+        """Confirm the setup."""
+        errors = {}
+
+        if user_input is not None:
+            opt_type = user_input[CONF_OPT_TYPE]
+            if opt_type == "扫描":
+                return await self.async_step_scan()
+            elif opt_type == "手动":
+                return await self.async_step_custom()
+
+        fields = OrderedDict()
+        fields[vol.Required(CONF_OPT_TYPE)] = vol.In(["扫描", "手动"])
+
+        return self.async_show_form(
+            step_id="option", data_schema=vol.Schema(fields), errors=errors
+        )
+
+    async def async_step_scan(self, user_input=None):
         """Confirm the setup."""
         errors = {}
 
@@ -160,14 +174,51 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         fields[vol.Required(CONF_NAME)] = vol.In(selectable_list)
 
         return self.async_show_form(
-            step_id="broker", data_schema=vol.Schema(fields), errors=errors
+            step_id="scan", data_schema=vol.Schema(fields), errors=errors
         )
 
-    #async def async_step_onboarding(
-    #        self, data: dict[str, Any] | None = None
-    #) -> FlowResult:
-    #    """Handle a flow initialized by onboarding."""
-    #    return self.async_create_entry(title="Radio Browser", data={})
+    async def async_step_custom(self, user_input=None):
+        """Confirm the setup."""
+        errors = {}
+
+        if user_input is not None:
+            connection_dict = {
+                CONF_NAME: user_input[CONF_NAME],
+                CONF_BROKER: user_input[CONF_BROKER],
+                CONF_PORT: user_input[CONF_PORT],
+                CONF_USERNAME: user_input[CONF_USERNAME],
+                CONF_PASSWORD: user_input[CONF_PASSWORD],
+            }
+
+            if connection_dict is not None:
+                can_connect = await self.hass.async_add_executor_job(
+                    try_connection,
+                    self.hass,
+                    connection_dict[CONF_BROKER],
+                    connection_dict[CONF_PORT],
+                    connection_dict[CONF_USERNAME],
+                    connection_dict[CONF_PASSWORD],
+                )
+                if can_connect:
+                    connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
+                    return self.async_create_entry(
+                        title=connection_dict[CONF_NAME], data=connection_dict
+                    )
+                else:
+                    errors["base"] = "cannot_connect"
+            else:
+                return self.async_abort(reason="select_error")
+
+        fields = OrderedDict()
+        fields[vol.Required(CONF_NAME, default="IG1-01")] = str
+        fields[vol.Required(CONF_BROKER)] = str
+        fields[vol.Required(CONF_PORT, default=1883)] = vol.Coerce(int)
+        fields[vol.Required(CONF_USERNAME)] = str
+        fields[vol.Required(CONF_PASSWORD)] = str
+
+        return self.async_show_form(
+            step_id="custom", data_schema=vol.Schema(fields), errors=errors
+        )
 
 
 def try_connection(hass, broker, port, username, password, protocol="3.1.1"):
