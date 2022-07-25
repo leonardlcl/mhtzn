@@ -1,39 +1,32 @@
 {
     "config": {
         "abort": {
-            "already_configured": "服务已被配置",
-            "single_instance_allowed": "该集成已经配置过了，且只能配置一次。若要重新配置，请先删除旧集成。",
-            "select_error": "请重新选择",
-            "not_found_device": "未扫描到设备"
+            "already_configured": "Service has been configured",
+            "single_instance_allowed": "The integration has already been configured and can only be configured once. To reconfigure, delete the old integration first.",
+            "select_error": "Please select again",
+            "not_found_device": "Device not scanned"
         },
         "error": {
-            "cannot_connect": "无法连接到设备。"
+            "cannot_connect": "Unable to connect to device."
         },
         "step": {
             "option": {
                 "data": {},
-                "description": "请选择添加方式。"
+                "description": "Please select an add method."
             },
             "scan": {
                 "data": {},
-                "description": "请选择扫描到的网关进行连接。"
+                "description": "Please select the scanned gateway to connect."
             },
             "custom": {
                 "data": {
-                    "name": "网关标识",
-                    "broker": "网关IP",
-                    "password": "密码",
-                    "port": "端口",
-                    "username": "用户名"
+                    "name": "Gateway ID",
+                    "broker": "Gateway IP",
+                    "password": "Password",
+                    "port": "Port",
+                    "username": "Username"
                 },
-                "description": "请输入网关连接信息。"
-            },
-            "hassio_confirm": {
-                "data": {
-                    "discovery": "启用发现"
-                },
-                "description": "是否要配置 Home Assistant 连接到 Supervisor 加载项 {addon} 提供的 MQTT 服务器？",
-                "title": "来自 Supervisor 加载项的 MQTT 服务器"
+                "description": "Please enter gateway connection information."
             }
         }
     }

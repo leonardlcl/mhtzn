@@ -27,13 +27,6 @@
                     "username": "用户名"
                 },
                 "description": "请输入网关连接信息。"
-            },
-            "hassio_confirm": {
-                "data": {
-                    "discovery": "启用发现"
-                },
-                "description": "是否要配置 Home Assistant 连接到 Supervisor 加载项 {addon} 提供的 MQTT 服务器？",
-                "title": "来自 Supervisor 加载项的 MQTT 服务器"
             }
         }
     }
