@@ -143,8 +143,8 @@ _PLATFORM_SCHEMA_BASE = (
             vol.Optional(CONF_XY, default=DEFAULT_XY): cv.boolean,
         },
     )
-        .extend(MQTT_ENTITY_COMMON_SCHEMA.schema)
-        .extend(MQTT_LIGHT_SCHEMA_SCHEMA.schema)
+    .extend(MQTT_ENTITY_COMMON_SCHEMA.schema)
+    .extend(MQTT_LIGHT_SCHEMA_SCHEMA.schema)
 )
 
 PLATFORM_SCHEMA_JSON = vol.All(
@@ -514,6 +514,8 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
         """
         should_update = False
 
+        _LOGGER.warning("kwargs : %s", kwargs)
+
         sn = self._config[CONF_UNIQUE_ID]
 
         message = {
@@ -547,7 +549,19 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
 
         if ATTR_COLOR_TEMP in kwargs:
             kelvin = int(kwargs[ATTR_COLOR_TEMP])
+
+            kelvin = (kelvin - 153) / (500 - 153)
+
+            kelvin = round(LIGHT_MIN_KELVIN + kelvin * (LIGHT_MAX_KELVIN - LIGHT_MIN_KELVIN))
+
             kelvin = LIGHT_MAX_KELVIN - kelvin + LIGHT_MIN_KELVIN
+
+            if kelvin > LIGHT_MAX_KELVIN:
+                kelvin = LIGHT_MAX_KELVIN
+
+            if kelvin < LIGHT_MIN_KELVIN:
+                kelvin = LIGHT_MIN_KELVIN
+
             message["data"]["kelvin"] = kelvin
             if message["data"].get("on") is not None:
                 del message["data"]["on"]

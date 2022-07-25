@@ -193,7 +193,8 @@ async def async_start(  # noqa: C901
             "name": device_name,
             "object_id": unique_id,
             "unique_id": unique_id,
-            "key_num": key_num
+            "key_num": key_num,
+            "optimistic": True
         }
 
         topic = f"{discovery_topic}/unique_id/config"
@@ -205,11 +206,15 @@ async def async_start(  # noqa: C901
             payload["schema"] = "json"
             payload["brightness"] = True
             payload["color_mode"] = True
-            payload["min_mireds"] = LIGHT_MIN_KELVIN
-            payload["max_mireds"] = LIGHT_MAX_KELVIN
             payload["supported_color_modes"] = ["color_temp", "rgb"]
         elif component == "cover":
             payload["command_topic"] = f"P/0/center/q21"
+            payload["set_position_topic"] = f"P/0/center/q21"
+            payload["position_topic"] = f"P/0/center/q21"
+            payload["device_class"] = "curtain"
+            payload["position_open"] = 100
+            payload["position_closed"] = 0
+
 
         payload = MQTTConfig(payload)
 
