@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/mhtzn.iml" filepath="$PROJECT_DIR$/mhtzn.iml" />
+      <module fileurl="file://$PROJECT_DIR$/hass-mhtzn.iml" filepath="$PROJECT_DIR$/hass-mhtzn.iml" />
     </modules>
   </component>
 </project>
