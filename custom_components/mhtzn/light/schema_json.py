@@ -304,62 +304,67 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
         @callback
         def state_received(msg):
             """Handle new MQTT messages."""
-            values = json.loads(msg.payload)
+            payload = json.loads(msg.payload)
 
-            if values["state"] == "ON":
-                self._state = True
-            elif values["state"] == "OFF":
-                self._state = False
-            elif values["state"] is None:
-                self._state = None
+            data = payload["data"]
 
-            if self._supported_features and SUPPORT_COLOR and "color" in values:
-                if values["color"] is None:
-                    self._hs = None
-                else:
-                    self._update_color(values)
+            _LOGGER.warning("data : %s", data)
 
-            if self._config[CONF_COLOR_MODE] and "color_mode" in values:
-                self._update_color(values)
+            sn = self._config[CONF_UNIQUE_ID]
 
-            if self._supported_features and SUPPORT_BRIGHTNESS:
+            _LOGGER.warning("sn : %s", sn)
+
+            values = None
+
+            for state in data:
+                if state["sn"] == sn:
+                    values = state
+
+            _LOGGER.warning("values : %s", values)
+
+            if values is None:
+                return
+
+            if "on" in values:
+                if values["on"] == 1:
+                    self._state = True
+                elif values["on"] == 0:
+                    self._state = False
+                elif values["on"] is None:
+                    self._state = None
+
+            if "rgb" in values:
+                rgb = values["rgb"]
+                blue = rgb & 255
+                green = (rgb >> 8) & 255
+                red = (rgb >> 16) & 255
+                self._rgb = (red, green, blue)
+
+            if "level" in values:
                 try:
                     self._brightness = int(
-                        values["brightness"]
-                        / float(self._config[CONF_BRIGHTNESS_SCALE])
-                        * 255
+                        values["level"] * 255
                     )
                 except KeyError:
                     pass
                 except (TypeError, ValueError):
                     _LOGGER.warning("Invalid brightness value received")
 
-            if (
-                    self._supported_features
-                    and SUPPORT_COLOR_TEMP
-                    and not self._config[CONF_COLOR_MODE]
-            ):
+            if "kelvin" in values:
                 try:
-                    if values["color_temp"] is None:
-                        self._color_temp = None
-                    else:
-                        self._color_temp = int(values["color_temp"])
+                    kelvin = int(values["kelvin"])
+                    if kelvin > LIGHT_MAX_KELVIN:
+                        kelvin = LIGHT_MAX_KELVIN
+                    if kelvin < LIGHT_MIN_KELVIN:
+                        kelvin = LIGHT_MIN_KELVIN
+                    kelvin = (kelvin - LIGHT_MIN_KELVIN) / (LIGHT_MAX_KELVIN - LIGHT_MIN_KELVIN)
+                    kelvin = round(153 + kelvin * (500 - 153))
+                    kelvin = 500 - kelvin + 153
+                    self._color_temp = kelvin
                 except KeyError:
                     pass
                 except ValueError:
                     _LOGGER.warning("Invalid color temp value received")
-
-            if self._supported_features and SUPPORT_EFFECT:
-                with suppress(KeyError):
-                    self._effect = values["effect"]
-
-            if self._supported_features and SUPPORT_WHITE_VALUE:
-                try:
-                    self._white_value = int(values["white_value"])
-                except KeyError:
-                    pass
-                except ValueError:
-                    _LOGGER.warning("Invalid white value received")
 
             self.async_write_ha_state()
 
@@ -513,8 +518,6 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
         This method is a coroutine.
         """
         should_update = False
-
-        _LOGGER.warning("kwargs : %s", kwargs)
 
         sn = self._config[CONF_UNIQUE_ID]
 

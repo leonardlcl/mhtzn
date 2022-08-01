@@ -203,6 +203,7 @@ async def async_start(  # noqa: C901
             payload["command_topic"] = f"P/0/center/q19"
         elif component == "light":
             payload["command_topic"] = f"P/0/center/q20"
+            payload["state_topic"] = f"p/+/event/3"
             payload["schema"] = "json"
             payload["brightness"] = True
             payload["color_mode"] = True
@@ -214,7 +215,6 @@ async def async_start(  # noqa: C901
             payload["device_class"] = "curtain"
             payload["position_open"] = 100
             payload["position_closed"] = 0
-
 
         payload = MQTTConfig(payload)
 

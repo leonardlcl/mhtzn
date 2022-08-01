@@ -17,6 +17,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 from . import discovery
+from .scan import scan_gateway
 from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic, query_device_async_publish
 
 from .config import CONFIG_SCHEMA_BASE, DEFAULT_VALUES, DEPRECATED_CONFIG_KEYS, SCHEMA_BASE
@@ -78,7 +79,6 @@ from .models import (  # noqa: F401
 _LOGGER = logging.getLogger(__name__)
 
 # List of platforms to support. There should be a matching .py file for each,
-# eg <cover.py> and <sensor.py>
 
 MANDATORY_DEFAULT_VALUES = (CONF_PORT,)
 
@@ -293,6 +293,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             {},
             blocking=False,
         )
+
+    await scan_gateway(hass)
 
     return True
 

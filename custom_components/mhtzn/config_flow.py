@@ -23,6 +23,7 @@ from homeassistant.const import (
 )
 
 from .client import MqttClientSetup
+from .scan import scan_gateway
 from .const import (
     DATA_MQTT_CONFIG,
     CONF_BROKER,
@@ -52,6 +53,11 @@ MQTT_TIMEOUT = 5
 CONF_OPT_TYPE = "opt_type"
 
 
+def _get_name(discovery_info):
+    service_type = discovery_info.type[:-1]  # Remove leading .
+    return discovery_info.name.replace(f".{service_type}.", "")
+
+
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Hello World."""
 
@@ -66,30 +72,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> FlowResult:
         """Handle zeroconf discovery."""
-        service_type = discovery_info.type[:-1]  # Remove leading .
-        name = discovery_info.name.replace(f".{service_type}.", "")
-        host = discovery_info.host
-        port = discovery_info.port
-        username = None
-        password = None
 
-        for key, value in discovery_info.properties.items():
-            if key == 'username':
-                username = value
-            elif key == 'password':
-                password = value
-            elif key == 'host':
-                host = value
-
-        connection_dict = {
-            CONF_NAME: name,
-            CONF_BROKER: host,
-            CONF_PORT: port,
-            CONF_USERNAME: username,
-            CONF_PASSWORD: password,
-        }
-
-        connection_store_dict[name] = connection_dict
+        connection_dict = self._get_connection_dict(discovery_info)
 
         for entry in self._async_current_entries():
             entry_data = entry.data
@@ -100,6 +84,40 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_abort(reason="not_xiaomi_miio")
+
+    def _get_connection_dict(self, discovery_info):
+        name = _get_name(discovery_info)
+        host = discovery_info.host
+        port = discovery_info.port
+        username = None
+        password = None
+
+        if name in self.hass.data:
+            default_info = self.hass.data[name]
+            if "username" in default_info:
+                username = default_info["username"]
+            if "password" in default_info:
+                password = default_info["password"]
+        else:
+            self.hass.data[name] = {}
+
+        for key, value in discovery_info.properties.items():
+            if key == 'username':
+                username = value
+                self.hass.data[name]["username"] = username
+            elif key == 'password':
+                password = value
+                self.hass.data[name]["password"] = password
+            elif key == 'host':
+                host = value
+
+        return {
+            CONF_NAME: name,
+            CONF_BROKER: host,
+            CONF_PORT: port,
+            CONF_USERNAME: username,
+            CONF_PASSWORD: password,
+        }
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
@@ -152,6 +170,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_abort(reason="select_error")
 
+        discovery_list = await scan_gateway(self.hass)
+
+        connection_store_dict.clear()
+        for info in discovery_list:
+            name = _get_name(info)
+            connection_dict = self._get_connection_dict(info)
+            connection_store_dict[name] = connection_dict
+
         selectable_list = []
 
         for key in list(connection_store_dict.keys()):
@@ -166,6 +192,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             if can_connect:
                 selectable_list.append(key)
+            else:
+                del connection_store_dict[key]
 
         if len(selectable_list) < 1:
             return self.async_abort(reason="not_found_device")
