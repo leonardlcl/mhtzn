@@ -29,16 +29,17 @@ from .const import (
     CONF_TOPIC,
     CONFIG_ENTRY_IS_SETUP,
     DATA_CONFIG_ENTRY_LOCK,
-    DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN,
+    DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN, DATA_MQTT,
 )
 
-from .util import query_device_async_publish
+from .util import query_device_async_publish, query_scene_async_publish
 
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORTED_COMPONENTS = [
     "light",
     "switch",
+    "scene",
     "cover",
 ]
 
@@ -77,10 +78,22 @@ async def async_start(  # noqa: C901
     """Start MQTT Discovery."""
     mqtt_integrations = {}
 
+    mqtt_connected = hass.data[DATA_MQTT].connected
+    times = 0
+    while not mqtt_connected:
+        if times > 60:
+            break
+        await asyncio.sleep(1)
+        times = times + 1
+        mqtt_connected = hass.data[DATA_MQTT].connected
+
+    _LOGGER.warning("耗时 %s 秒", times)
+
     async def async_discovery_message_received(msg):
         """Process the received message."""
         hass.data[LAST_DISCOVERY] = time.time()
         payload = msg.payload
+        topic = msg.topic
 
         if payload:
             try:
@@ -92,20 +105,28 @@ async def async_start(  # noqa: C901
             _LOGGER.warning("JSON None")
             return
 
-        device_list = payload["data"]["list"]
+        if topic.endswith("p5"):
+            device_list = payload["data"]["list"]
+            for device in device_list:
+                device_name = device["name"]
+                device_sn = device["sn"]
+                device_type = device["devType"]
+                if device_type == 1:
+                    await add_entity("light", device_name, device_sn)
+                elif device_type == 3:
+                    await add_entity("cover", device_name, device_sn)
+                '''
+                elif device_type == 2:
+                    await add_entity("switch", device_name, device_sn)
+                '''
+        elif topic.endswith("p28"):
+            scene_list = payload["data"]
+            for scene in scene_list:
+                scene_name = scene["name"]
+                scene_id = scene["id"]
+                await add_entity("scene", scene_name, scene_id)
 
-        for device in device_list:
-            device_name = device["name"]
-            device_sn = device["sn"]
-            device_type = device["devType"]
-            if device_type == 1:
-                await add_entity("light", device_name, device_sn)
-            elif device_type == 3:
-                await add_entity("cover", device_name, device_sn)
-            '''
-            elif device_type == 2:
-                await add_entity("switch", device_name, device_sn)
-            '''
+
 
     async def async_process_discovery_payload(component, discovery_id, payload):
         """Process the payload of a new discovery."""
@@ -181,16 +202,16 @@ async def async_start(  # noqa: C901
                 hass, MQTT_DISCOVERY_DONE.format(discovery_hash), None
             )
 
-    async def add_entity(component, device_name, device_sn, key_num=None) -> None:
+    async def add_entity(component, name, identify, key_num=None) -> None:
 
         if component not in SUPPORTED_COMPONENTS:
             _LOGGER.warning("Integration %s is not supported", component)
             return
 
-        unique_id = device_sn
+        unique_id = identify
 
         payload = {
-            "name": device_name,
+            "name": name,
             "object_id": unique_id,
             "unique_id": unique_id,
             "key_num": key_num,
@@ -215,6 +236,8 @@ async def async_start(  # noqa: C901
             payload["device_class"] = "curtain"
             payload["position_open"] = 100
             payload["position_closed"] = 0
+        elif component == "scene":
+            payload["command_topic"] = f"P/0/center/q30"
 
         payload = MQTTConfig(payload)
 
@@ -296,6 +319,7 @@ async def async_start(  # noqa: C901
 
     discovery_topics = [
         f"{discovery_topic}/center/p5",
+        f"{discovery_topic}/center/p28",
     ]
 
     hass.data[DISCOVERY_UNSUBSCRIBE] = await asyncio.gather(
@@ -306,6 +330,8 @@ async def async_start(  # noqa: C901
     )
 
     await query_device_async_publish(hass)
+
+    await query_scene_async_publish(hass)
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

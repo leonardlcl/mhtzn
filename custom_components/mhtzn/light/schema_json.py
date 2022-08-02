@@ -308,19 +308,13 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
 
             data = payload["data"]
 
-            _LOGGER.warning("data : %s", data)
-
             sn = self._config[CONF_UNIQUE_ID]
-
-            _LOGGER.warning("sn : %s", sn)
 
             values = None
 
             for state in data:
                 if state["sn"] == sn:
                     values = state
-
-            _LOGGER.warning("values : %s", values)
 
             if values is None:
                 return

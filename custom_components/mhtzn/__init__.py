@@ -87,6 +87,7 @@ GATEWAY_PLATFORMS = [
     Platform.LIGHT,
     Platform.SENSOR,
     Platform.SWITCH,
+    Platform.SCENE,
 ]
 
 SERVICE_PUBLISH = "publish"
@@ -294,7 +295,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             blocking=False,
         )
 
-    await scan_gateway(hass)
+    await scan_gateway()
 
     return True
 

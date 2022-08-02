@@ -33,6 +33,17 @@ async def query_device_async_publish(hass: HomeAssistant):
     await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
 
 
+async def query_scene_async_publish(hass: HomeAssistant):
+    await asyncio.sleep(2)
+    query_device_topic = f"P/0/center/p28"
+    query_device_payload = {
+        "seq": 1,
+        "rspTo": DEFAULT_PREFIX,
+        "data": {}
+    }
+    await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
+
+
 def valid_topic(value: Any) -> str:
     """Validate that this is a valid topic name/filter."""
     value = cv.string(value)

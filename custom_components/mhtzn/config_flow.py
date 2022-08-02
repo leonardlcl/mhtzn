@@ -170,7 +170,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_abort(reason="select_error")
 
-        discovery_list = await scan_gateway(self.hass)
+        discovery_list = await scan_gateway()
 
         connection_store_dict.clear()
         for info in discovery_list:
@@ -181,19 +181,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         selectable_list = []
 
         for key in list(connection_store_dict.keys()):
-            connection_dict = connection_store_dict[key]
-            can_connect = await self.hass.async_add_executor_job(
-                try_connection,
-                self.hass,
-                connection_dict[CONF_BROKER],
-                connection_dict[CONF_PORT],
-                connection_dict[CONF_USERNAME],
-                connection_dict[CONF_PASSWORD],
-            )
-            if can_connect:
-                selectable_list.append(key)
-            else:
-                del connection_store_dict[key]
+            selectable_list.append(key)
 
         if len(selectable_list) < 1:
             return self.async_abort(reason="not_found_device")
