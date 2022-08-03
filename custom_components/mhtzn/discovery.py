@@ -232,7 +232,7 @@ async def async_start(  # noqa: C901
         elif component == "cover":
             payload["command_topic"] = f"P/0/center/q21"
             payload["set_position_topic"] = f"P/0/center/q21"
-            payload["position_topic"] = f"P/0/center/q21"
+            payload["position_topic"] = f"p/+/event/3"
             payload["device_class"] = "curtain"
             payload["position_open"] = 100
             payload["position_closed"] = 0

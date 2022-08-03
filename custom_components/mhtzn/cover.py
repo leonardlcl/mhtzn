@@ -387,47 +387,21 @@ class MqttCover(MqttEntity, CoverEntity):
         @callback
         def position_message_received(msg):
             """Handle new MQTT position messages."""
-            payload = self._get_position_template(msg.payload)
+            payload = json_loads(msg.payload)
 
-            if not payload:
-                _LOGGER.debug("Ignoring empty position message from '%s'", msg.topic)
-                return
+            stats_list = payload["data"]
 
-            try:
-                payload = json_loads(payload)
-            except JSONDecodeError:
-                pass
+            sn = self._config[CONF_UNIQUE_ID]
 
-            if isinstance(payload, dict):
-                if "position" not in payload:
-                    _LOGGER.warning(
-                        "Template (position_template) returned JSON without position attribute"
+            for state in stats_list:
+                if state["sn"] == sn:
+                    self._position = int(state["travel"] * 100)
+                    self._state = (
+                        STATE_CLOSED
+                        if self._position == DEFAULT_POSITION_CLOSED
+                        else STATE_OPEN
                     )
-                    return
-                if "tilt_position" in payload:
-                    if not self._config.get(CONF_TILT_STATE_OPTIMISTIC):
-                        # reset forced set tilt optimistic
-                        self._tilt_optimistic = False
-                    self.tilt_payload_received(payload["tilt_position"])
-                payload = payload["position"]
-
-            try:
-                percentage_payload = self.find_percentage_in_range(
-                    float(payload), COVER_PAYLOAD
-                )
-            except ValueError:
-                _LOGGER.warning("Payload '%s' is not numeric", payload)
-                return
-
-            self._position = percentage_payload
-            if self._config.get(CONF_STATE_TOPIC) is None:
-                self._state = (
-                    STATE_CLOSED
-                    if percentage_payload == DEFAULT_POSITION_CLOSED
-                    else STATE_OPEN
-                )
-
-            self.async_write_ha_state()
+                    self.async_write_ha_state()
 
         if self._config.get(CONF_GET_POSITION_TOPIC):
             topics["get_position_topic"] = {
@@ -713,7 +687,7 @@ class MqttCover(MqttEntity, CoverEntity):
             "data": {
                 "sn": sn,
                 "action": 3,
-                "travel": round(position/100, 2)
+                "travel": round(position / 100, 2)
             }
         }
 

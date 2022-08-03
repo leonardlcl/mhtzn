@@ -16,16 +16,16 @@ def on_service_state_change(
     global search_map
     if state_change is ServiceStateChange.Added or state_change is ServiceStateChange.Updated:
         info = zeroconf.get_service_info(service_type, name)
+        _LOGGER.warning("state_change : %s ; data : %s", state_change, info)
         discovery_info = info_from_service(info)
         service_type = service_type[:-1]
         name = name.replace(f".{service_type}.", "")
         search_map[name] = discovery_info
-        _LOGGER.warning("state_change : %s ; data : %s", state_change, discovery_info)
     elif state_change is ServiceStateChange.Removed:
+        _LOGGER.warning("state_change : %s", state_change)
         service_type = service_type[:-1]
         name = name.replace(f".{service_type}.", "")
         del search_map[name]
-        _LOGGER.warning("state_change : %s", state_change)
 
 
 async def scan_gateway() -> list:
