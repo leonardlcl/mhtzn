@@ -29,10 +29,10 @@ from .const import (
     CONF_TOPIC,
     CONFIG_ENTRY_IS_SETUP,
     DATA_CONFIG_ENTRY_LOCK,
-    DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN, DATA_MQTT,
+    DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN, DATA_MQTT, CONF_LIGHT_DEVICE_TYPE,
 )
 
-from .util import query_device_async_publish, query_scene_async_publish
+from .util import async_publish
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +78,15 @@ async def async_start(  # noqa: C901
     """Start MQTT Discovery."""
     mqtt_integrations = {}
 
+    light_device_type = "single"
+
+    if CONF_LIGHT_DEVICE_TYPE in config_entry.data:
+        light_device_type = config_entry.data[CONF_LIGHT_DEVICE_TYPE]
+
+    room_map = {}
+
+    light_group_map = {}
+
     mqtt_connected = hass.data[DATA_MQTT].connected
     times = 0
     while not mqtt_connected:
@@ -91,6 +100,7 @@ async def async_start(  # noqa: C901
 
     async def async_discovery_message_received(msg):
         """Process the received message."""
+
         hass.data[LAST_DISCOVERY] = time.time()
         payload = msg.payload
         topic = msg.topic
@@ -111,7 +121,7 @@ async def async_start(  # noqa: C901
                 device_name = device["name"]
                 device_sn = device["sn"]
                 device_type = device["devType"]
-                if device_type == 1:
+                if device_type == 1 and light_device_type == "single":
                     await add_entity("light", device_name, device_sn)
                 elif device_type == 3:
                     await add_entity("cover", device_name, device_sn)
@@ -125,8 +135,32 @@ async def async_start(  # noqa: C901
                 scene_name = scene["name"]
                 scene_id = scene["id"]
                 await add_entity("scene", scene_name, scene_id)
+        elif topic.endswith("p33"):
+            for room in payload["data"]["rooms"]:
+                room_map[room["id"]] = room
+            for lightGroup in payload["data"]["lightsSubgroups"]:
+                light_group_map[lightGroup["id"]] = lightGroup
+        elif topic.endswith("p31"):
+            for room in payload["data"]:
+                room_id = room["room"]
+                room_name = "默认房间"
+                if room_id == 0:
+                    room_name = "全屋"
+                elif room_id in room_map:
+                    room_instance = room_map[room_id]
+                    room_name = room_instance["name"]
 
+                for light_group_id in room["lights"]:
+                    device_name = "默认灯组"
+                    if light_group_id == 0:
+                        device_name = "所有灯"
+                    elif light_group_id in light_group_map:
+                        light_group = light_group_map[light_group_id]
+                        device_name = light_group["name"]
+                    entity_id = f"{room_id}-{light_group_id}"
+                    entity_name = f"{room_name}-{device_name}"
 
+                    await add_entity("light", entity_name, entity_id)
 
     async def async_process_discovery_payload(component, discovery_id, payload):
         """Process the payload of a new discovery."""
@@ -318,8 +352,14 @@ async def async_start(  # noqa: C901
     # )
 
     discovery_topics = [
+        # 获取设备
         f"{discovery_topic}/center/p5",
+        # 获取场景
         f"{discovery_topic}/center/p28",
+        # 查询所有基础数据 房间、灯组、窗帘组
+        f"{discovery_topic}/center/p33",
+        # 获取房间和灯组关系
+        f"{discovery_topic}/center/p31",
     ]
 
     hass.data[DISCOVERY_UNSUBSCRIBE] = await asyncio.gather(
@@ -329,9 +369,18 @@ async def async_start(  # noqa: C901
         )
     )
 
-    await query_device_async_publish(hass)
+    # 获取设备列表
+    await asyncio.sleep(2)
+    await async_publish(hass, "P/0/center/q5")
+    # 获取场景列表
+    await async_publish(hass, "P/0/center/q28")
 
-    await query_scene_async_publish(hass)
+    if light_device_type == "group":
+        # 获取基础数据
+        await async_publish(hass, "P/0/center/q33")
+        # 获取关联数据
+        await asyncio.sleep(8)
+        await async_publish(hass, "P/0/center/q31")
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

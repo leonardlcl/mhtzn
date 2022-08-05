@@ -11,8 +11,11 @@
         },
         "step": {
             "option": {
-                "data": {},
-                "description": "請選擇添加方式。"
+                "data": {
+                    "opt_type": "網關添加方式",
+                    "light_device_type": "智能燈光控制方式"
+                },
+                "description": "請選擇網關添加方式以及智能燈光控制方式。"
             },
             "scan": {
                 "data": {},

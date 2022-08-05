@@ -44,7 +44,7 @@ from .const import (
     DEFAULT_WILL,
     PLATFORMS,
     PROTOCOL_31,
-    PROTOCOL_311,
+    PROTOCOL_311, CONF_LIGHT_DEVICE_TYPE,
 )
 from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic
 
@@ -82,6 +82,7 @@ PLATFORM_CONFIG_SCHEMA_BASE = vol.Schema(
 
 CONFIG_SCHEMA_BASE = PLATFORM_CONFIG_SCHEMA_BASE.extend(
     {
+        vol.Optional(CONF_LIGHT_DEVICE_TYPE): cv.string,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_CLIENT_ID): cv.string,
         vol.Optional(CONF_KEEPALIVE, default=DEFAULT_KEEPALIVE): vol.All(

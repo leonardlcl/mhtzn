@@ -38,7 +38,7 @@ async def scan_gateway() -> list:
 
     times = 0
     while True:
-        if times > 10:
+        if times > 3:
             break
         await asyncio.sleep(1)
         times = times + 1

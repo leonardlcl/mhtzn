@@ -6,17 +6,14 @@ import queue
 from collections import OrderedDict
 
 import voluptuous as vol
-from typing import Any
 
 from homeassistant import config_entries, exceptions
 from homeassistant.components import zeroconf
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.const import (
     CONF_DISCOVERY,
-    CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
-    CONF_PAYLOAD,
     CONF_PORT,
     CONF_PROTOCOL,
     CONF_USERNAME,
@@ -28,7 +25,7 @@ from .const import (
     DATA_MQTT_CONFIG,
     CONF_BROKER,
     DEFAULT_DISCOVERY,
-    DOMAIN,
+    DOMAIN, CONF_OPT_TYPE, CONF_LIGHT_DEVICE_TYPE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,13 +41,13 @@ _LOGGER = logging.getLogger(__name__)
 # quite work as documented and always gave me the "Lokalise key references" string
 # (in square brackets), rather than the actual translated value. I did not attempt to
 # figure this out or look further into it.
-DATA_SCHEMA = vol.Schema({("host"): str})
+DATA_SCHEMA = vol.Schema({"host": str})
 
 connection_store_dict = {}
 
 MQTT_TIMEOUT = 5
 
-CONF_OPT_TYPE = "opt_type"
+light_device_type = None
 
 
 def _get_name(discovery_info):
@@ -78,11 +75,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         for entry in self._async_current_entries():
             entry_data = entry.data
             if entry_data[CONF_NAME] == connection_dict[CONF_NAME]:
+                if CONF_LIGHT_DEVICE_TYPE in entry_data:
+                    connection_dict[CONF_LIGHT_DEVICE_TYPE] = entry_data[CONF_LIGHT_DEVICE_TYPE]
                 self.hass.config_entries.async_update_entry(
                     entry,
                     data=connection_dict,
                 )
-
         return self.async_abort(reason="not_xiaomi_miio")
 
     def _get_connection_dict(self, discovery_info):
@@ -92,32 +90,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         username = None
         password = None
 
-        if name in self.hass.data:
-            default_info = self.hass.data[name]
-            if "username" in default_info:
-                username = default_info["username"]
-            if "password" in default_info:
-                password = default_info["password"]
-        else:
-            self.hass.data[name] = {}
-
         for key, value in discovery_info.properties.items():
             if key == 'username':
                 username = value
-                self.hass.data[name]["username"] = username
             elif key == 'password':
                 password = value
-                self.hass.data[name]["password"] = password
             elif key == 'host':
                 host = value
 
-        return {
+        connection_info = {
             CONF_NAME: name,
             CONF_BROKER: host,
             CONF_PORT: port,
             CONF_USERNAME: username,
             CONF_PASSWORD: password,
         }
+
+        if light_device_type is not None:
+            connection_info[CONF_LIGHT_DEVICE_TYPE] = light_device_type
+
+        return connection_info
+
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
@@ -128,10 +121,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_option(self, user_input=None):
         """Confirm the setup."""
+        global light_device_type
         errors = {}
 
         if user_input is not None:
             opt_type = user_input[CONF_OPT_TYPE]
+            if user_input[CONF_LIGHT_DEVICE_TYPE] == "单灯":
+                light_device_type = "single"
+            else:
+                light_device_type = "group"
+
             if opt_type == "扫描":
                 return await self.async_step_scan()
             elif opt_type == "手动":
@@ -139,6 +138,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         fields = OrderedDict()
         fields[vol.Required(CONF_OPT_TYPE)] = vol.In(["扫描", "手动"])
+        fields[vol.Required(CONF_LIGHT_DEVICE_TYPE)] = vol.In(["单灯", "灯组"])
 
         return self.async_show_form(
             step_id="option", data_schema=vol.Schema(fields), errors=errors
@@ -152,14 +152,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             name = user_input[CONF_NAME]
             connection_dict = connection_store_dict.get(name)
             if connection_dict is not None:
-                can_connect = await self.hass.async_add_executor_job(
-                    try_connection,
-                    self.hass,
-                    connection_dict[CONF_BROKER],
-                    connection_dict[CONF_PORT],
-                    connection_dict[CONF_USERNAME],
-                    connection_dict[CONF_PASSWORD],
-                )
+                can_connect = self._try_mqtt_connect(connection_dict)
                 if can_connect:
                     connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
                     return self.async_create_entry(
@@ -198,32 +191,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            connection_dict = {
-                CONF_NAME: user_input[CONF_NAME],
-                CONF_BROKER: user_input[CONF_BROKER],
-                CONF_PORT: user_input[CONF_PORT],
-                CONF_USERNAME: user_input[CONF_USERNAME],
-                CONF_PASSWORD: user_input[CONF_PASSWORD],
-            }
-
-            if connection_dict is not None:
-                can_connect = await self.hass.async_add_executor_job(
-                    try_connection,
-                    self.hass,
-                    connection_dict[CONF_BROKER],
-                    connection_dict[CONF_PORT],
-                    connection_dict[CONF_USERNAME],
-                    connection_dict[CONF_PASSWORD],
+            connection_dict = {CONF_NAME: user_input[CONF_NAME], CONF_BROKER: user_input[CONF_BROKER],
+                               CONF_PORT: user_input[CONF_PORT], CONF_USERNAME: user_input[CONF_USERNAME],
+                               CONF_PASSWORD: user_input[CONF_PASSWORD]}
+            can_connect = self._try_mqtt_connect(connection_dict)
+            if can_connect:
+                connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
+                return self.async_create_entry(
+                    title=connection_dict[CONF_NAME], data=connection_dict
                 )
-                if can_connect:
-                    connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
-                    return self.async_create_entry(
-                        title=connection_dict[CONF_NAME], data=connection_dict
-                    )
-                else:
-                    errors["base"] = "cannot_connect"
             else:
-                return self.async_abort(reason="select_error")
+                errors["base"] = "cannot_connect"
 
         fields = OrderedDict()
         fields[vol.Required(CONF_NAME, default="IG1-01")] = str
@@ -234,6 +212,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="custom", data_schema=vol.Schema(fields), errors=errors
+        )
+
+    def _try_mqtt_connect(self, connection_dict):
+        return self.hass.async_add_executor_job(
+            try_connection,
+            self.hass,
+            connection_dict[CONF_BROKER],
+            connection_dict[CONF_PORT],
+            connection_dict[CONF_USERNAME],
+            connection_dict[CONF_PASSWORD],
         )
 
 

@@ -23,6 +23,8 @@ CONF_STATE_TOPIC = "state_topic"
 CONF_STATE_VALUE_TEMPLATE = "state_value_template"
 CONF_TOPIC = "topic"
 CONF_WILL_MESSAGE = "will_message"
+CONF_OPT_TYPE = "opt_type"
+CONF_LIGHT_DEVICE_TYPE = "light_device_type"
 
 CONF_CERTIFICATE = "certificate"
 CONF_CLIENT_KEY = "client_key"

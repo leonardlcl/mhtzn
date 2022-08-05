@@ -11,8 +11,11 @@
         },
         "step": {
             "option": {
-                "data": {},
-                "description": "Please select an add method."
+                "data": {
+                    "opt_type": "Gateway add method",
+                    "light_device_type": "Smart Lighting Control Mode"
+                },
+                "description": "Please select the gateway addition method and the intelligent lighting control method."
             },
             "scan": {
                 "data": {},

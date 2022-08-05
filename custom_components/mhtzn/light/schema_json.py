@@ -523,6 +523,24 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
             }
         }
 
+        id_list = sn.split('-')
+
+        room = None
+        group = None
+        if len(id_list) >=2:
+            room = id_list[0]
+            group = id_list[1]
+
+        if group is not None:
+            message = {
+                "seq": 1,
+                "data": {
+                    "room": int(room),
+                    "subgroup": int(group),
+                    "on": 1
+                }
+            }
+
         if ATTR_RGB_COLOR in kwargs and self._supports_color_mode(ColorMode.RGB):
             rgb = self._scale_rgbxx(kwargs[ATTR_RGB_COLOR], kwargs)
             message["data"]["rgb"] = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
@@ -597,6 +615,24 @@ class MqttLightJson(MqttEntity, LightEntity, RestoreEntity):
                 "on": 0
             }
         }
+
+        id_list = sn.split('-')
+
+        room = None
+        group = None
+        if len(id_list) >=2:
+            room = id_list[0]
+            group = id_list[1]
+
+        if group is not None:
+            message = {
+                "seq": 1,
+                "data": {
+                    "room": int(room),
+                    "subgroup": int(group),
+                    "on": 0
+                }
+            }
 
         self._set_flash_and_transition(message, **kwargs)
 
