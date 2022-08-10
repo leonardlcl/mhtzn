@@ -394,7 +394,7 @@ class MqttCover(MqttEntity, CoverEntity):
             sn = self._config[CONF_UNIQUE_ID]
 
             for state in stats_list:
-                if state["sn"] == sn:
+                if state["sn"] == sn and "travel" in state:
                     self._position = int(state["travel"] * 100)
                     self._state = (
                         STATE_CLOSED

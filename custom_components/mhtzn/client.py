@@ -389,6 +389,7 @@ class MQTT:
             )
         except OSError as err:
             _LOGGER.error("Failed to connect to MQTT server due to exception: %s", err)
+            _LOGGER.error("Failed to connect conf: %s", self.conf)
 
         if result is not None and result != 0:
             _LOGGER.error(

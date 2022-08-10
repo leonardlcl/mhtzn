@@ -32,7 +32,7 @@ from .const import (
     DOMAIN, LIGHT_MIN_KELVIN, LIGHT_MAX_KELVIN, DATA_MQTT, CONF_LIGHT_DEVICE_TYPE,
 )
 
-from .util import async_publish
+from .util import async_common_publish
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +64,13 @@ class MQTTConfig(dict):
 
 def clear_discovery_hash(hass: HomeAssistant, discovery_hash: tuple) -> None:
     """Clear entry in ALREADY_DISCOVERED list."""
-    del hass.data[ALREADY_DISCOVERED][discovery_hash]
+
+    _LOGGER.warning("hass.data[ALREADY_DISCOVERED] : %s", hass.data[ALREADY_DISCOVERED])
+
+    _LOGGER.warning("discovery_hash : %s", discovery_hash)
+
+    if discovery_hash in hass.data[ALREADY_DISCOVERED]:
+        del hass.data[ALREADY_DISCOVERED][discovery_hash]
 
 
 def set_discovery_hash(hass: HomeAssistant, discovery_hash: tuple):
@@ -87,17 +93,6 @@ async def async_start(  # noqa: C901
 
     light_group_map = {}
 
-    mqtt_connected = hass.data[DATA_MQTT].connected
-    times = 0
-    while not mqtt_connected:
-        if times > 60:
-            break
-        await asyncio.sleep(1)
-        times = times + 1
-        mqtt_connected = hass.data[DATA_MQTT].connected
-
-    _LOGGER.warning("耗时 %s 秒", times)
-
     async def async_discovery_message_received(msg):
         """Process the received message."""
 
@@ -114,6 +109,8 @@ async def async_start(  # noqa: C901
         else:
             _LOGGER.warning("JSON None")
             return
+
+        _LOGGER.warning("payload JSON: '%s'", payload)
 
         if topic.endswith("p5"):
             device_list = payload["data"]["list"]
@@ -170,16 +167,22 @@ async def async_start(  # noqa: C901
         if discovery_hash in hass.data[ALREADY_DISCOVERED] or payload:
 
             async def discovery_done(_):
-                pending = hass.data[PENDING_DISCOVERED][discovery_hash]["pending"]
-                _LOGGER.debug("Pending discovery for %s: %s", discovery_hash, pending)
-                if not pending:
-                    hass.data[PENDING_DISCOVERED][discovery_hash]["unsub"]()
-                    hass.data[PENDING_DISCOVERED].pop(discovery_hash)
+                if discovery_hash in hass.data[PENDING_DISCOVERED]:
+                    pending = hass.data[PENDING_DISCOVERED][discovery_hash]["pending"]
+                    _LOGGER.debug("Pending discovery for %s: %s", discovery_hash, pending)
+                    if not pending:
+                        hass.data[PENDING_DISCOVERED][discovery_hash]["unsub"]()
+                        hass.data[PENDING_DISCOVERED].pop(discovery_hash)
+                    else:
+                        payload = pending.pop()
+                        await async_process_discovery_payload(
+                            component, discovery_id, payload
+                        )
                 else:
-                    payload = pending.pop()
-                    await async_process_discovery_payload(
-                        component, discovery_id, payload
-                    )
+                    _LOGGER.debug("不存在 hass.data[PENDING_DISCOVERED] discovery_hash : %s  %s",
+                                  hass.data[PENDING_DISCOVERED],
+                                  discovery_hash
+                                  )
 
             if discovery_hash not in hass.data[PENDING_DISCOVERED]:
                 hass.data[PENDING_DISCOVERED][discovery_hash] = {
@@ -368,19 +371,21 @@ async def async_start(  # noqa: C901
             for topic in discovery_topics
         )
     )
+    await asyncio.sleep(5)
+    mqtt_connected = hass.data[DATA_MQTT].connected
 
-    # 获取设备列表
-    await asyncio.sleep(2)
-    await async_publish(hass, "P/0/center/q5")
-    # 获取场景列表
-    await async_publish(hass, "P/0/center/q28")
+    if mqtt_connected:
+        # 获取设备列表
+        await async_common_publish(hass, "P/0/center/q5")
+        # 获取场景列表
+        await async_common_publish(hass, "P/0/center/q28")
 
-    if light_device_type == "group":
-        # 获取基础数据
-        await async_publish(hass, "P/0/center/q33")
-        # 获取关联数据
-        await asyncio.sleep(8)
-        await async_publish(hass, "P/0/center/q31")
+        if light_device_type == "group":
+            # 获取基础数据
+            await async_common_publish(hass, "P/0/center/q33")
+            # 获取关联数据
+            await asyncio.sleep(8)
+            await async_common_publish(hass, "P/0/center/q31")
 
     hass.data[LAST_DISCOVERY] = time.time()
     mqtt_integrations = await async_get_mqtt(hass)

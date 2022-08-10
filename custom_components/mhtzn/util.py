@@ -6,7 +6,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 
-from homeassistant.const import CONF_PAYLOAD
+from homeassistant.const import CONF_PAYLOAD, CONF_NAME, CONF_PORT, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, template
 
@@ -18,8 +18,39 @@ from .const import (
     DEFAULT_QOS,
     DEFAULT_RETAIN,
     DATA_MQTT,
-    DEFAULT_PREFIX,
+    DEFAULT_PREFIX, CONF_BROKER,
 )
+
+
+def get_name(discovery_info):
+    service_type = discovery_info.type[:-1]  # Remove leading .
+    return discovery_info.name.replace(f".{service_type}.", "")
+
+
+def get_connection_dict(discovery_info):
+    name = get_name(discovery_info)
+    host = discovery_info.host
+    port = discovery_info.port
+    username = None
+    password = None
+
+    for key, value in discovery_info.properties.items():
+        if key == 'username':
+            username = value
+        elif key == 'password':
+            password = value
+        elif key == 'host':
+            host = value
+
+    connection_info = {
+        CONF_NAME: name,
+        CONF_BROKER: host,
+        CONF_PORT: port,
+        CONF_USERNAME: username,
+        CONF_PASSWORD: password,
+    }
+
+    return connection_info
 
 
 async def query_device_async_publish(hass: HomeAssistant):
@@ -55,7 +86,7 @@ async def query_basic_async_publish(hass: HomeAssistant):
     await hass.data[DATA_MQTT].async_publish(query_device_topic, json.dumps(query_device_payload), 0, False)
 
 
-async def async_publish(hass: HomeAssistant, query_device_topic):
+async def async_common_publish(hass: HomeAssistant, query_device_topic):
     query_device_payload = {
         "seq": 1,
         "rspTo": DEFAULT_PREFIX,

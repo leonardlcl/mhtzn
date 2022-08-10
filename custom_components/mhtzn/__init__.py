@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import time
+
 import voluptuous as vol
 
 import datetime as dt
@@ -17,8 +19,9 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 from . import discovery
-from .scan import scan_gateway
-from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic, query_device_async_publish
+from .scan import scan_gateway_info
+from .util import _VALID_QOS_SCHEMA, valid_publish_topic, valid_subscribe_topic, query_device_async_publish, \
+    async_common_publish
 
 from .config import CONFIG_SCHEMA_BASE, DEFAULT_VALUES, DEPRECATED_CONFIG_KEYS, SCHEMA_BASE
 from homeassistant.const import (
@@ -65,7 +68,7 @@ from .const import (  # noqa: F401
     MQTT_CONNECTED,
     MQTT_DISCONNECTED,
     PLATFORMS,
-    CONF_RETAIN,
+    CONF_RETAIN, CONF_LIGHT_DEVICE_TYPE,
 )
 
 from .models import (  # noqa: F401
@@ -162,12 +165,15 @@ async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -
     """
     mqtt_client = hass.data[DATA_MQTT]
 
+    _LOGGER.warning("entry change trigger : %s", entry)
+
     if (conf := hass.data.get(DATA_MQTT_CONFIG)) is None:
         conf = CONFIG_SCHEMA_BASE(dict(entry.data))
 
     mqtt_client.conf = _merge_extended_config(entry, conf)
     await mqtt_client.async_disconnect()
     mqtt_client.init_client()
+
     await mqtt_client.async_connect()
 
     await discovery.async_stop(hass)
@@ -186,10 +192,32 @@ async def _async_setup_discovery(
     await discovery.async_start(hass, conf[CONF_DISCOVERY_PREFIX], config_entry)
 
 
+async def check_current_connect(hass: HomeAssistant, entry: ConfigEntry):
+
+    connection_dict = await scan_gateway_info(entry.data[CONF_NAME], 30)
+
+    if (connection_dict is not None and (connection_dict[CONF_BROKER] != entry.data[CONF_BROKER] or
+                                         connection_dict[CONF_PORT] != entry.data[CONF_PORT] or
+                                         connection_dict[CONF_USERNAME] != entry.data[CONF_USERNAME] or
+                                         connection_dict[CONF_PASSWORD] != entry.data[CONF_PASSWORD])):
+
+        if CONF_LIGHT_DEVICE_TYPE in entry.data:
+            connection_dict[CONF_LIGHT_DEVICE_TYPE] = entry.data[CONF_LIGHT_DEVICE_TYPE]
+
+        hass.config_entries.async_update_entry(
+            entry,
+            data=connection_dict,
+        )
+
+    return entry
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Hello World from a config entry."""
 
     _merge_basic_config(hass, entry, hass.data.get(DATA_MQTT_CONFIG, {}))
+
+    _LOGGER.warning("async_setup_entry ============================= : %s", time.time())
 
     # Bail out if broker setting is missing
     if CONF_BROKER not in entry.data:
@@ -295,15 +323,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             blocking=False,
         )
 
-    await scan_gateway()
+    # await check_current_connect(hass, entry)
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
 
     # await query_device_async_publish(hass, config_entry)
-
-    return True
-
+    _LOGGER.warning(" async_unload_entry entry.entry_id : %s", entry.entry_id)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    return unload_ok

@@ -78,4 +78,5 @@ LIGHT_MAX_KELVIN = 6500
 PLATFORMS = [
     Platform.LIGHT,
     Platform.COVER,
+    Platform.SCENE,
 ]

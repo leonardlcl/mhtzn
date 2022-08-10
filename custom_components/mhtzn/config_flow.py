@@ -1,9 +1,11 @@
 """Config flow for Hello World integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import queue
 from collections import OrderedDict
+from typing import Any
 
 import voluptuous as vol
 
@@ -20,13 +22,15 @@ from homeassistant.const import (
 )
 
 from .client import MqttClientSetup
-from .scan import scan_gateway
+from .scan import scan_gateway_dict
 from .const import (
     DATA_MQTT_CONFIG,
     CONF_BROKER,
     DEFAULT_DISCOVERY,
-    DOMAIN, CONF_OPT_TYPE, CONF_LIGHT_DEVICE_TYPE,
+    DOMAIN, CONF_OPT_TYPE, CONF_LIGHT_DEVICE_TYPE, DATA_MQTT,
 )
+
+from .util import get_name, get_connection_dict, async_common_publish
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,16 +47,13 @@ _LOGGER = logging.getLogger(__name__)
 # figure this out or look further into it.
 DATA_SCHEMA = vol.Schema({"host": str})
 
-connection_store_dict = {}
-
 MQTT_TIMEOUT = 5
 
-light_device_type = None
+connection_store_dict = {}
 
+light_device_type = "single"
 
-def _get_name(discovery_info):
-    service_type = discovery_info.type[:-1]  # Remove leading .
-    return discovery_info.name.replace(f".{service_type}.", "")
+scan_flag = False
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -65,52 +66,48 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # changes.
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
+    def __init__(self):
+        """Set up the instance."""
+        self.discovery_info = {}
+
     async def async_step_zeroconf(
             self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> FlowResult:
         """Handle zeroconf discovery."""
+        global scan_flag
 
-        connection_dict = self._get_connection_dict(discovery_info)
+        self.discovery_info = get_connection_dict(discovery_info)
+
+        _LOGGER.warning("async_step_zeroconf : %s", self.discovery_info)
 
         for entry in self._async_current_entries():
             entry_data = entry.data
-            if entry_data[CONF_NAME] == connection_dict[CONF_NAME]:
+            if entry_data[CONF_NAME] == self.discovery_info[CONF_NAME]:
                 if CONF_LIGHT_DEVICE_TYPE in entry_data:
-                    connection_dict[CONF_LIGHT_DEVICE_TYPE] = entry_data[CONF_LIGHT_DEVICE_TYPE]
+                    self.discovery_info[CONF_LIGHT_DEVICE_TYPE] = entry_data[CONF_LIGHT_DEVICE_TYPE]
+
                 self.hass.config_entries.async_update_entry(
                     entry,
-                    data=connection_dict,
+                    data=self.discovery_info,
                 )
-        return self.async_abort(reason="not_xiaomi_miio")
 
-    def _get_connection_dict(self, discovery_info):
-        name = _get_name(discovery_info)
-        host = discovery_info.host
-        port = discovery_info.port
-        username = None
-        password = None
+        if (not self._async_current_entries()
+                and not scan_flag
+                and self.discovery_info[CONF_NAME] is not None
+                and self.discovery_info[CONF_BROKER] is not None
+                and self.discovery_info[CONF_PORT] is not None
+                and self.discovery_info[CONF_USERNAME] is not None
+                and self.discovery_info[CONF_PASSWORD] is not None):
+            scan_flag = True
+            return await self.async_step_zeroconf_confirm()
 
-        for key, value in discovery_info.properties.items():
-            if key == 'username':
-                username = value
-            elif key == 'password':
-                password = value
-            elif key == 'host':
-                host = value
+        return self.async_abort(reason="single_instance_allowed")
 
-        connection_info = {
-            CONF_NAME: name,
-            CONF_BROKER: host,
-            CONF_PORT: port,
-            CONF_USERNAME: username,
-            CONF_PASSWORD: password,
-        }
-
-        if light_device_type is not None:
-            connection_info[CONF_LIGHT_DEVICE_TYPE] = light_device_type
-
-        return connection_info
-
+    async def async_step_zeroconf_confirm(
+            self, user_input: dict[str, Any] = None
+    ) -> FlowResult:
+        """Handle a confirmation flow initiated by zeroconf."""
+        return await self.async_step_option()
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
@@ -125,27 +122,26 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            opt_type = user_input[CONF_OPT_TYPE]
             if user_input[CONF_LIGHT_DEVICE_TYPE] == "单灯":
                 light_device_type = "single"
             else:
                 light_device_type = "group"
 
-            if opt_type == "扫描":
-                return await self.async_step_scan()
-            elif opt_type == "手动":
-                return await self.async_step_custom()
+            return await self.async_step_scan()
 
         fields = OrderedDict()
-        fields[vol.Required(CONF_OPT_TYPE)] = vol.In(["扫描", "手动"])
         fields[vol.Required(CONF_LIGHT_DEVICE_TYPE)] = vol.In(["单灯", "灯组"])
 
         return self.async_show_form(
-            step_id="option", data_schema=vol.Schema(fields), errors=errors
+            step_id="option",
+            data_schema=vol.Schema(fields),
+            errors=errors
         )
 
     async def async_step_scan(self, user_input=None):
         """Confirm the setup."""
+        global scan_flag
+        global connection_store_dict
         errors = {}
 
         if user_input is not None:
@@ -155,6 +151,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 can_connect = self._try_mqtt_connect(connection_dict)
                 if can_connect:
                     connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
+                    connection_dict[CONF_LIGHT_DEVICE_TYPE] = light_device_type
+                    scan_flag = False
                     return self.async_create_entry(
                         title=connection_dict[CONF_NAME], data=connection_dict
                     )
@@ -163,13 +161,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_abort(reason="select_error")
 
-        discovery_list = await scan_gateway()
-
-        connection_store_dict.clear()
-        for info in discovery_list:
-            name = _get_name(info)
-            connection_dict = self._get_connection_dict(info)
-            connection_store_dict[name] = connection_dict
+        connection_store_dict = await scan_gateway_dict(3)
 
         selectable_list = []
 
@@ -186,6 +178,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="scan", data_schema=vol.Schema(fields), errors=errors
         )
 
+    '''  
     async def async_step_custom(self, user_input=None):
         """Confirm the setup."""
         errors = {}
@@ -197,6 +190,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             can_connect = self._try_mqtt_connect(connection_dict)
             if can_connect:
                 connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
+                connection_dict[CONF_LIGHT_DEVICE_TYPE] = light_device_type
                 return self.async_create_entry(
                     title=connection_dict[CONF_NAME], data=connection_dict
                 )
@@ -213,6 +207,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="custom", data_schema=vol.Schema(fields), errors=errors
         )
+    '''
 
     def _try_mqtt_connect(self, connection_dict):
         return self.hass.async_add_executor_job(
