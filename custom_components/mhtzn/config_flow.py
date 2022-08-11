@@ -1,7 +1,6 @@
 """Config flow for Hello World integration."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import queue
 from collections import OrderedDict
@@ -27,10 +26,10 @@ from .const import (
     DATA_MQTT_CONFIG,
     CONF_BROKER,
     DEFAULT_DISCOVERY,
-    DOMAIN, CONF_OPT_TYPE, CONF_LIGHT_DEVICE_TYPE, DATA_MQTT,
+    DOMAIN, CONF_LIGHT_DEVICE_TYPE,
 )
 
-from .util import get_name, get_connection_dict, async_common_publish
+from .util import get_connection_dict
 
 _LOGGER = logging.getLogger(__name__)
 

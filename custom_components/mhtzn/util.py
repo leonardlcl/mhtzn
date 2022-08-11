@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigEntry
 
 from homeassistant.const import CONF_PAYLOAD, CONF_NAME, CONF_PORT, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import functools
 import logging
+from typing import Any
 
 import voluptuous as vol
 
@@ -22,7 +23,6 @@ from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from . import subscription
 from .config import MQTT_RW_SCHEMA
@@ -63,15 +63,13 @@ PLATFORM_SCHEMA_MODERN = MQTT_RW_SCHEMA.extend(
     }
 ).extend(MQTT_ENTITY_COMMON_SCHEMA.schema)
 
-
 DISCOVERY_SCHEMA = PLATFORM_SCHEMA_MODERN.extend({}, extra=vol.REMOVE_EXTRA)
 
 
-
 async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+        hass: HomeAssistant,
+        config_entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up MQTT switch through configuration.yaml and dynamically through MQTT discovery."""
     # load and initialize platform config from configuration.yaml
@@ -84,7 +82,7 @@ async def async_setup_entry(
 
 
 async def _async_setup_entity(
-    hass, async_add_entities, config, config_entry=None, discovery_data=None
+        hass, async_add_entities, config, config_entry=None, discovery_data=None
 ):
     """Set up the MQTT switch."""
     async_add_entities([MqttSwitch(hass, config, config_entry, discovery_data)])
@@ -92,6 +90,12 @@ async def _async_setup_entity(
 
 class MqttSwitch(MqttEntity, SwitchEntity, RestoreEntity):
     """Representation of a switch that can be toggled using MQTT."""
+
+    def turn_on(self, **kwargs: Any) -> None:
+        pass
+
+    def turn_off(self, **kwargs: Any) -> None:
+        pass
 
     _entity_id_format = switch.ENTITY_ID_FORMAT
 
@@ -119,7 +123,7 @@ class MqttSwitch(MqttEntity, SwitchEntity, RestoreEntity):
         self._state_off = state_off if state_off else config[CONF_PAYLOAD_OFF]
 
         self._optimistic = (
-            config[CONF_OPTIMISTIC] or config.get(CONF_STATE_TOPIC) is None
+                config[CONF_OPTIMISTIC] or config.get(CONF_STATE_TOPIC) is None
         )
 
         self._value_template = MqttValueTemplate(

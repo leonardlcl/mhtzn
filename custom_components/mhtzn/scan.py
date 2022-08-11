@@ -1,11 +1,10 @@
 import asyncio
 import logging
 
-from homeassistant.components.zeroconf import ZeroconfServiceInfo, info_from_service
-from zeroconf import IPVersion, ServiceBrowser, ServiceStateChange, Zeroconf, ZeroconfServiceTypes, DNSQuestionType
-from zeroconf.asyncio import AsyncZeroconf, AsyncServiceBrowser, AsyncServiceInfo
+from homeassistant.components.zeroconf import info_from_service
+from zeroconf import IPVersion, ServiceBrowser, ServiceStateChange, Zeroconf
 
-from custom_components.mhtzn.util import get_name, get_connection_dict
+from custom_components.mhtzn.util import get_connection_dict
 
 search_map = {}
 

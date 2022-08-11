@@ -12,11 +12,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Event, HassJob, HomeAssistant, ServiceCall, callback
+from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.data_entry_flow import BaseServiceInfo
-from homeassistant.helpers import config_validation as cv, event, template
+from homeassistant.helpers import config_validation as cv, event
 from homeassistant.helpers.device_registry import DeviceEntry
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 from . import discovery
 from .scan import scan_gateway_info
@@ -28,12 +27,11 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_DISCOVERY,
     CONF_PASSWORD,
-    CONF_PAYLOAD,
     CONF_PORT,
     CONF_USERNAME,
     Platform,
     EVENT_HOMEASSISTANT_STOP,
-    SERVICE_RELOAD, CONF_VALUE_TEMPLATE,
+    SERVICE_RELOAD,
 )
 from .client import (  # noqa: F401
     MQTT,

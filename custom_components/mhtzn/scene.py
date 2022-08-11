@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import functools
 import json
+from typing import Any
 
 import voluptuous as vol
 
@@ -102,6 +103,9 @@ class MqttScene(
     Scene,
 ):
     """Representation of a scene that can be activated using MQTT."""
+
+    def activate(self, **kwargs: Any) -> None:
+        pass
 
     _entity_id_format = scene.DOMAIN + ".{}"
 
