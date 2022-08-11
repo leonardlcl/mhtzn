@@ -178,37 +178,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="scan", data_schema=vol.Schema(fields), errors=errors
         )
 
-    '''  
-    async def async_step_custom(self, user_input=None):
-        """Confirm the setup."""
-        errors = {}
-
-        if user_input is not None:
-            connection_dict = {CONF_NAME: user_input[CONF_NAME], CONF_BROKER: user_input[CONF_BROKER],
-                               CONF_PORT: user_input[CONF_PORT], CONF_USERNAME: user_input[CONF_USERNAME],
-                               CONF_PASSWORD: user_input[CONF_PASSWORD]}
-            can_connect = self._try_mqtt_connect(connection_dict)
-            if can_connect:
-                connection_dict[CONF_DISCOVERY] = DEFAULT_DISCOVERY
-                connection_dict[CONF_LIGHT_DEVICE_TYPE] = light_device_type
-                return self.async_create_entry(
-                    title=connection_dict[CONF_NAME], data=connection_dict
-                )
-            else:
-                errors["base"] = "cannot_connect"
-
-        fields = OrderedDict()
-        fields[vol.Required(CONF_NAME, default="IG1-01")] = str
-        fields[vol.Required(CONF_BROKER)] = str
-        fields[vol.Required(CONF_PORT, default=1883)] = vol.Coerce(int)
-        fields[vol.Required(CONF_USERNAME)] = str
-        fields[vol.Required(CONF_PASSWORD)] = str
-
-        return self.async_show_form(
-            step_id="custom", data_schema=vol.Schema(fields), errors=errors
-        )
-    '''
-
     def _try_mqtt_connect(self, connection_dict):
         return self.hass.async_add_executor_job(
             try_connection,

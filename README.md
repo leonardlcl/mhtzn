@@ -1,24 +1,26 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-# MHTZN
+# 棉花糖智能
 
-## Installing
+## 安装
 
-> Download and copy `custom_components/mhtzn` folder to `custom_components` folder in your HomeAssistant config folder
+> 下载 `custom_components/mhtzn` 目录并将其复制到 HomeAssistant 配置文件夹中的 `custom_components` 目录下
 
-> Or you can install component with [HACS](https://hacs.xyz)
+> 或者您可以使用 [HACS](https://hacs.xyz) 安装组件
 
-## Config
-
-### HomeAssistant GUI
-
-> Configuration > Integration > ➕ > mhtzn
-### Configuration variables:
-#### scan
-> Scan the LAN's list of gateway device information and select one to connect
-#### custom
-
-- **Gateway ID**(*Required*): The identification of your gateway
-- **Gateway IP**(*Required*): The IP address of your gateway
-- **Port**(*Required*): The MQTT port number of your gateway
-- **Username**(*Required*): The MQTT username of your gateway
-- **Password**(*Required*): The MQTT password of your gateway
+## 配置
+### step1
+> 通过棉花糖智能APP添加网关和其他智能设备
+### step2
+> 依次选择 【配置】 > 【集成】 > 【➕ 添加集成】
+> 
+> 选择或者输入并选择【棉花糖智能】
+### step3
+> 选择智能灯光控制类型：单灯/灯组，点击 【提交】
+>
+> 单灯：按照单个设备控制智能灯光
+>
+> 灯组：按照棉花糖智能中的房间和灯组控制智能灯光
+### step4
+> 选择一个已扫描到的网关，点击 【提交】
+> 
+> 完成后即可将棉花糖智能中的设备同步到HomeAssistant
