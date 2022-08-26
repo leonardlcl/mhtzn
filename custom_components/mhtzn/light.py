@@ -68,9 +68,11 @@ class CustomLight(LightEntity):
 
         self.is_group = config["is_group"]
 
-        self._attr_color_mode = ColorMode.RGB
+        self._attr_color_mode = ColorMode.COLOR_TEMP
 
         self._attr_supported_color_modes: set[ColorMode] = set()
+
+        self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
 
         self._attr_supported_color_modes.add(ColorMode.COLOR_TEMP)
 
@@ -78,10 +80,12 @@ class CustomLight(LightEntity):
             self.room = int(config["room"])
             self.subgroup = int(config["subgroup"])
             self._attr_supported_color_modes.add(ColorMode.RGB)
+            self._attr_color_mode = ColorMode.RGB
         else:
             self.sn = config["sn"]
             if ColorMode.RGB in config:
                 self._attr_supported_color_modes.add(ColorMode.RGB)
+                self._attr_color_mode = ColorMode.RGB
 
         self.hass = hass
 
@@ -173,6 +177,7 @@ class CustomLight(LightEntity):
             on = None
             self._attr_color_temp = kwargs["color_temp"]
             self._attr_rgb_color = color_temp_to_rgb(kelvin)
+            self._attr_color_mode = ColorMode.COLOR_TEMP
 
         if "brightness" in kwargs:
             brightness_normalized = kwargs["brightness"] / 255
@@ -187,6 +192,7 @@ class CustomLight(LightEntity):
 
             on = None
             self._attr_rgb_color = kwargs["rgb_color"]
+            self._attr_color_mode = ColorMode.RGB
 
         await self.exec_command(on=on, level=level, kelvin=kelvin, rgb=rgb)
 
