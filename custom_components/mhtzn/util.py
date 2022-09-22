@@ -13,7 +13,7 @@ def get_connection_name(discovery_info):
     return discovery_info.name.replace(f".{service_type}.", "")
 
 
-def color_temp_to_rgb(color_temp) -> tuple[int, int, int] | None:
+def color_temp_to_rgb(color_temp) -> tuple[int, int, int]:
     if color_temp < 1000:
         color_temp = 1000.0
 

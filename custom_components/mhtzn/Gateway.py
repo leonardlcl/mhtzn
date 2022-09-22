@@ -145,9 +145,19 @@ class Gateway:
         mqtt_client.init_client()
         await mqtt_client.async_connect()
 
-    async def init(self):
+    async def init(self, entry: ConfigEntry):
         """Initialize the gateway business logic, including subscribing to device data, scene data, and basic data,
         and sending data reporting instructions to the gateway"""
+
+        mqtt_connected = self._hass.data[MQTT_CLIENT_INSTANCE].connected
+        _LOGGER.warning(mqtt_connected)
+
+        while not mqtt_connected:
+            await self.reconnect(entry)
+            await asyncio.sleep(1)
+            mqtt_connected = self._hass.data[MQTT_CLIENT_INSTANCE].connected
+            _LOGGER.warning(mqtt_connected)
+
         discovery_topics = [
             # Subscribe to device list
             f"{MQTT_TOPIC_PREFIX}/center/p5",
@@ -171,10 +181,6 @@ class Gateway:
                 for topic in discovery_topics
             )
         )
-        await asyncio.sleep(5)
-        mqtt_connected = self._hass.data[MQTT_CLIENT_INSTANCE].connected
-
-        _LOGGER.warning(mqtt_connected)
 
         if mqtt_connected:
             # publish payload to get device list
