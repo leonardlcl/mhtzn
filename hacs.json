@@ -1,4 +1,5 @@
 {
   "name": "mhtzn",
-  "render_readme": true
+  "render_readme": true,
+  "country": "CN"
 }
