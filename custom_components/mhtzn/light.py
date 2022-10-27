@@ -20,9 +20,13 @@ _LOGGER = logging.getLogger(__name__)
 
 COMPONENT = "light"
 
-LIGHT_MIN_KELVIN = 2700
+LIGHT_MIN_KELVIN = 153
 
-LIGHT_MAX_KELVIN = 6500
+LIGHT_MAX_KELVIN = 500
+
+LIGHT_MHT_MIN_KELVIN = 2700
+
+LIGHT_MHT_MAX_KELVIN = 6500
 
 
 async def async_setup_entry(
@@ -132,6 +136,7 @@ class CustomLight(LightEntity):
 
     def update_state(self, data):
         """Light event reporting changes the light state in HA"""
+
         if "on" in data:
             if data["on"] == 0:
                 self.on_off = False
@@ -140,11 +145,15 @@ class CustomLight(LightEntity):
 
         if "kelvin" in data:
             kelvin = int(data["kelvin"])
-            if kelvin > LIGHT_MAX_KELVIN:
+
+            if kelvin > LIGHT_MHT_MAX_KELVIN:
                 kelvin = LIGHT_MAX_KELVIN
-            if kelvin < LIGHT_MIN_KELVIN:
+            if kelvin < LIGHT_MHT_MIN_KELVIN:
                 kelvin = LIGHT_MIN_KELVIN
-            kelvin = LIGHT_MAX_KELVIN - (kelvin - LIGHT_MIN_KELVIN)
+
+            kelvin_bl = (kelvin - LIGHT_MHT_MIN_KELVIN) / (LIGHT_MHT_MAX_KELVIN - LIGHT_MHT_MIN_KELVIN)
+
+            kelvin = LIGHT_MAX_KELVIN - round(kelvin_bl * (LIGHT_MAX_KELVIN - LIGHT_MIN_KELVIN))
             self._attr_color_temp = kelvin
 
         if "rgb" in data:
@@ -167,13 +176,12 @@ class CustomLight(LightEntity):
         if "color_temp" in kwargs:
             """HA color temperature control page is reversed"""
             kelvin = int(kwargs["color_temp"])
-            kelvin = (kelvin - 2700) / (6500 - 2700)
-            kelvin = round(LIGHT_MIN_KELVIN + kelvin * (LIGHT_MAX_KELVIN - LIGHT_MIN_KELVIN))
-            kelvin = LIGHT_MAX_KELVIN - kelvin + LIGHT_MIN_KELVIN
-            if kelvin > LIGHT_MAX_KELVIN:
-                kelvin = LIGHT_MAX_KELVIN
-            if kelvin < LIGHT_MIN_KELVIN:
-                kelvin = LIGHT_MIN_KELVIN
+            kelvin_bl = (kelvin - LIGHT_MIN_KELVIN) / (LIGHT_MAX_KELVIN - LIGHT_MIN_KELVIN)
+            kelvin = LIGHT_MHT_MAX_KELVIN - round(kelvin_bl * (LIGHT_MHT_MAX_KELVIN - LIGHT_MHT_MIN_KELVIN))
+            if kelvin > LIGHT_MHT_MAX_KELVIN:
+                kelvin = LIGHT_MHT_MAX_KELVIN
+            if kelvin < LIGHT_MHT_MIN_KELVIN:
+                kelvin = LIGHT_MHT_MIN_KELVIN
             on = None
             self._attr_color_temp = kwargs["color_temp"]
             self._attr_rgb_color = color_temp_to_rgb(kelvin)
