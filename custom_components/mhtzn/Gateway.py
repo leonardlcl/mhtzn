@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import MQTT_CLIENT_INSTANCE, CONF_LIGHT_DEVICE_TYPE, EVENT_ENTITY_REGISTER, MQTT_TOPIC_PREFIX, \
-    EVENT_ENTITY_STATE_UPDATE
+    EVENT_ENTITY_STATE_UPDATE, DEVICE_COUNT_MAX
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +61,8 @@ class Gateway:
         payload = msg.payload
         topic = msg.topic
 
+        _LOGGER.warning(payload)
+
         if payload:
             try:
                 payload = json.loads(payload)
@@ -72,6 +74,11 @@ class Gateway:
             return
 
         if topic.endswith("p5"):
+
+            start = payload["data"]["start"]
+            count = payload["data"]["count"]
+            total = payload["data"]["total"]
+
             """Device List data"""
             device_list = payload["data"]["list"]
             for device in device_list:
@@ -84,6 +91,15 @@ class Gateway:
                     """Light"""
                     device["is_group"] = False
                     await self._add_entity("light", device)
+
+            if start + count < total:
+                data = {
+                    "start": start + count,
+                    "max": DEVICE_COUNT_MAX,
+                    "devTypes": [1, 3],
+                }
+                await self._async_mqtt_publish("P/0/center/q5", data)
+
         elif topic.endswith("p28"):
             """Scene List data"""
             scene_list = payload["data"]
@@ -184,21 +200,26 @@ class Gateway:
 
         if mqtt_connected:
             # publish payload to get device list
-            await self._async_mqtt_publish("P/0/center/q5")
+            data = {
+                "start": 0,
+                "max": DEVICE_COUNT_MAX,
+                "devTypes": [1, 3],
+            }
+            await self._async_mqtt_publish("P/0/center/q5", data)
             # publish payload to get scene list
-            await self._async_mqtt_publish("P/0/center/q28")
+            await self._async_mqtt_publish("P/0/center/q28", {})
             if self.light_device_type == "group":
                 # publish payload to get all basic data Room list, light group list, curtain group list
-                await self._async_mqtt_publish("P/0/center/q33")
+                await self._async_mqtt_publish("P/0/center/q33", {})
                 # publish payload to get room and light group relationship
                 await asyncio.sleep(5)
-                await self._async_mqtt_publish("P/0/center/q31")
+                await self._async_mqtt_publish("P/0/center/q31", {})
 
-    async def _async_mqtt_publish(self, topic: str):
+    async def _async_mqtt_publish(self, topic: str, data: dict):
         query_device_payload = {
             "seq": 1,
             "rspTo": MQTT_TOPIC_PREFIX,
-            "data": {}
+            "data": data
         }
         await self._hass.data[MQTT_CLIENT_INSTANCE].async_publish(
             topic,

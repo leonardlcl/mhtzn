@@ -18,6 +18,8 @@ MQTT_CLIENT_INSTANCE = "mqtt_client_instance"
 
 MQTT_TOPIC_PREFIX = DOMAIN
 
+DEVICE_COUNT_MAX = 100
+
 PLATFORMS: list[str] = [
     "cover",
     "light",
