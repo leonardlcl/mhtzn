@@ -23,5 +23,6 @@ DEVICE_COUNT_MAX = 100
 PLATFORMS: list[str] = [
     "cover",
     "light",
-    "scene"
+    "scene",
+    "climate"
 ]

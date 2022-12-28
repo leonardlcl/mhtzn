@@ -61,8 +61,6 @@ class Gateway:
         payload = msg.payload
         topic = msg.topic
 
-        _LOGGER.warning(payload)
-
         if payload:
             try:
                 payload = json.loads(payload)
@@ -91,12 +89,15 @@ class Gateway:
                     """Light"""
                     device["is_group"] = False
                     await self._add_entity("light", device)
+                elif device_type == 11:
+                    """Climate"""
+                    await self._add_entity("climate", device)
 
             if start + count < total:
                 data = {
                     "start": start + count,
                     "max": DEVICE_COUNT_MAX,
-                    "devTypes": [1, 3],
+                    "devTypes": [1, 3, 11],
                 }
                 await self._async_mqtt_publish("P/0/center/q5", data)
 
@@ -203,7 +204,7 @@ class Gateway:
             data = {
                 "start": 0,
                 "max": DEVICE_COUNT_MAX,
-                "devTypes": [1, 3],
+                "devTypes": [1, 3, 11],
             }
             await self._async_mqtt_publish("P/0/center/q5", data)
             # publish payload to get scene list
