@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from abc import ABC
 
 from homeassistant.components.climate import ClimateEntity, HVACMode, ClimateEntityFeature, FAN_LOW, FAN_MEDIUM, \
@@ -200,15 +201,16 @@ class CustomClimate(ClimateEntity, ABC):
         if hvac_mode == HVAC_MODE_OFF:
             await self.exec_command(19, 0)
         else:
-            await self.exec_command(19, 1)
-
+            if self._attr_hvac_mode == HVAC_MODE_OFF:
+                await self.exec_command(19, 1)
+                time.sleep(1)
             if hvac_mode == HVAC_MODE_AUTO:
                 await self.exec_command(21, 0)
             elif hvac_mode == HVAC_MODE_COOL:
                 await self.exec_command(21, 1)
             elif hvac_mode == HVAC_MODE_HEAT:
                 await self.exec_command(21, 2)
-            elif hvac_mode == HVAC_MODE_HEAT:
+            elif hvac_mode == HVAC_MODE_FAN_ONLY:
                 await self.exec_command(21, 3)
             elif hvac_mode == HVAC_MODE_DRY:
                 await self.exec_command(21, 4)
