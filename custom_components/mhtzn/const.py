@@ -2,6 +2,8 @@
 
 DOMAIN = "mhtzn"
 
+MANUFACTURER = "Netmoon"
+
 CONF_BROKER = "broker"
 
 CONF_LIGHT_DEVICE_TYPE = "light_device_type"
